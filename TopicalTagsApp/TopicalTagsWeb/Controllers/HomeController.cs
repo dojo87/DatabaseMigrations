@@ -4,15 +4,26 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TopicalTagsWeb.Models;
 
 namespace TopicalTagsWeb.Controllers
 {
     public class HomeController : Controller
     {
+        private Repository Repo { get; }
+
+        public HomeController(Repository repo)
+        {
+            Repo = repo;
+        }
+
         public IActionResult Index()
         {
-            return View();
+            var allTopics = Repo.Topics
+                .Include(t => t.Tags)
+                .ToList();
+            return View(new Topics { All = allTopics });
         }
 
         public IActionResult Privacy()
