@@ -21,7 +21,8 @@ namespace TopicalTagsWeb.Controllers
         public IActionResult Index()
         {
             var allTopics = Repo.Topics
-                .Include(t => t.Tags)
+                .Include(t => t.TopicTags)
+                .ThenInclude(t => t.Tag)
                 .ToList();
             return View(new Topics { All = allTopics });
         }

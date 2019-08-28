@@ -6,9 +6,9 @@
         @foreach (Topic topic in Model.All)
         {
             <li>@topic.Title <a href="@topic.Url" title="@topic.Title">>> GOTO</a> 
-                @foreach (Tag tag in topic.Tags)
+                @foreach (TopicTags tag in topic.TopicTags)
                 {
-                    <span class="badge badge-primary">@tag.Name</span>
+                    <span class="badge badge-primary">@tag.Tag.Name</span>
                 }
             </li>
         }

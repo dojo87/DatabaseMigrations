@@ -1,4 +1,4 @@
-﻿CREATE TABLE [dbo].[Tag]
+﻿CREATE TABLE [dbo].[Tags]
 (
 	[Id] INT NOT NULL PRIMARY KEY,
 	[Name] VARCHAR(255)
