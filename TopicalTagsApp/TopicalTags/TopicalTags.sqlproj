@@ -63,11 +63,22 @@
     <Build Include="Schema\Topics.sql" />
     <Build Include="Schema\Tags.sql" />
     <Build Include="Schema\TopicTags.sql" />
+    <PostDeploy Include="PostScripts\PostScript.sql" />
   </ItemGroup>
   <ItemGroup>
-    <PostDeploy Include="PostScripts\TestData.sql" />
+    <None Include="PostScripts\TestData.sql" />
+    <None Include="PostScripts\PostScript.Default.sql" />
+    <None Include="PostScripts\PostScript.Debug.sql" />
+    <None Include="PostScripts\PostScript.Release.sql" />
+    <None Include="SwitchToEnvironmentFile.ps1" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TopicalTags.publish.xml" />
   </ItemGroup>
+  <PropertyGroup>
+    <PreBuildEvent>powershell.exe "$(ProjectDir)SwitchToEnvironmentFile.ps1" -fileName "$(ProjectDir)PostScripts\PostScript.sql" -configuration "$(ConfigurationName)"</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>powershell.exe "$(ProjectDir)SwitchToEnvironmentFile.ps1" -fileName "$(ProjectDir)PostScripts\PostScript.sql" -configuration "Default"</PostBuildEvent>
+  </PropertyGroup>
 </Project>
