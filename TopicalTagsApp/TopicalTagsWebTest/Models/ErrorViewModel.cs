@@ -1,6 +1,6 @@
 using System;
 
-namespace TopicalTagsWeb.Models
+namespace TopicalTagsWebTest.Models
 {
     public class ErrorViewModel
     {

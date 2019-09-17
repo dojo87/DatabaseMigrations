@@ -1,4 +1,4 @@
-﻿CREATE TABLE [dbo].[Topics]
+﻿CREATE TABLE [dbo].[Topic]
 (
 	[Id] INT NOT NULL PRIMARY KEY,
 	[Title] VARCHAR (2000) NOT NULL,
