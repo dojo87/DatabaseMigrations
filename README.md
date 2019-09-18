@@ -344,16 +344,17 @@ dotnet ef dbcontext scaffold `
    --output-dir Model `
    --context TopicContext `
    --force --verbose
-
-# Opis:
-# [dotnet ef dbcontext scaffold] Używamy możliwości CLI dotnet, aby:
-# [name=DefaultDatabase] - dla połączenia o nazwe DefaultDatabase (można tutaj podać też ConnectionString)
-# [Microsoft.EntityFrameworkCore.SqlServer] - dostawcy połączenia dla MS SqlServer
-# [--output-dir Model] - w folderze Model
-# [--context TopicContext] - stworzyć implementację kontekstu TopicContext i klas modelu wygenerowanych na podstawie bazy
-# [--force] - i wymusić aktualizację w przyszłości, gdy pliki będą istnieć
-# [--verbose] - oraz dostać dodatkowe informacje na temat procesu.
 ```
+
+Opis:
+
+- [dotnet ef dbcontext scaffold] Używamy możliwości CLI dotnet, aby:
+- [name=DefaultDatabase] - dla połączenia o nazwe DefaultDatabase (można tutaj podać też ConnectionString)
+- [Microsoft.EntityFrameworkCore.SqlServer] - dostawcy połączenia dla MS SqlServer
+- [--output-dir Model] - w folderze Model
+- [--context TopicContext] - stworzyć implementację kontekstu TopicContext i klas modelu wygenerowanych na podstawie bazy
+- [--force] - i wymusić aktualizację w przyszłości, gdy pliki będą istnieć
+- [--verbose] - oraz dostać dodatkowe informacje na temat procesu.
 
 Po uruchomieniu skryptu otrzymujemy wygenerowane klasy per tabela oraz naszą implementację kontekstu EF.
 W przypadku aplikacji ASP.NET Core wystarczy jeszcze dodać nasz kontekst do kontenera IoC w Startup.cs.
@@ -454,7 +455,7 @@ if($output -eq '' -or $output -eq $null){
 ```
 
 ```powershell
-# Podobnie wywołamy w naszym systemie do Releasów (TFS, Octopus, Jenkins whatever), tylko trzeba sobie ścieżki ogarnąć.
+# Example execution in your Release system (TFS, Octopus, Jenkins whatever), just adjust your paths.
 .\GenerateDiffScript.ps1 -profile "TopicalTags.publish.xml" -dacpac "./TopicalTags.dacpac" -output "./GoracySkryptDlaDibieja.sql"
 ```
 
@@ -464,9 +465,7 @@ Do rozważenia jest również opcja pozwalająca na stworzenie obrazu struktury 
 A no stworzony został drugi projekt SQLowy, który zawierał dokładnie i literalnie NIC. W ustawieniach profilu należało ustawić kilka ustawień odpowiadających za DROP obiektów, przede wszystkim `DropObjectsNotInSource` i zastosować taki profil przed naszą główną aktualizacją. Tym samym baza danych była czyszczona i stawiana na nowo bez jej usuwania i tworzenia, co by wymagało dodatkowych uprawnień.
 
 ```xml
-<!-- Truncate.publish.xml
-     W naszym przypadku nie usuwaliśmy rzeczy związanych z loginami i użytkownikami,
-     bo sobie usunąłem w ten sposób użytkownika db_owner, na którym właśnie szedł proces aktualizacji :D  -->
+<!-- Truncate.publish.xml -->
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -495,7 +494,191 @@ A no stworzony został drugi projekt SQLowy, który zawierał dokładnie i liter
 </Project>
 ```
 
+W naszym przypadku nie usuwaliśmy rzeczy związanych z loginami i użytkownikami, bo sobie usunąłem w ten sposób użytkownika db_owner, na którym właśnie szedł proces aktualizacji :D
+
+## Database First z Migracjami
+
+### Aktualizacja i Automatyzacja
+
+Jeżeli stresuje Cię, że oddajesz zadanie aktualizacji bazy danych w ręcę "tempego" narzędzia, to do powyższego rozwiązania można również dodać bardziej "jawne" migracje.
+Wykorzystamy do tego celu [DbUp](https://www.nuget.org/packages/dbup-sqlserver/). DbUp wykonuje zdefiniowaną listę skryptów SQL na docelowej bazie danych, zapisując przy te już wykonane w tabeli `Journal`. Pozwala to na kontrolę migracji wykonanych już na danej bazie. Wszystko przypomina podejście _Code First_, tyle, że migracje są napisane w czystym SQL.
+
+Stwórzmy aplikację konsolową .NET Core i zainstalujmy potrzebne narzędzia:
+
+```powershell
+dotnet add package dbup-sqlserver --version 4.2.0
+dotnet add package Newtonsoft.Json --version 12.0.2
+```
+
+DbUp pozwala konfigurować sposób migracji bazy danych na wiele sposobów przez Fluent API. Napiszmy klasę DbMigrator, aby zdefiniować nasz proces.
+
+```csharp
+using DbUp;
+using DbUp.Engine;
+using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
+
+namespace TopicalTagsMigrations
+{
+    public class DbMigrator
+    {
+        public void Migrate(string appSettingsPath, string connectionStringName, string migrationsDirectory)
+        {
+            string connectionString = GetConnectionString(appSettingsPath, connectionStringName);
+            DbUp.Engine.DatabaseUpgradeResult migration = MigrateWithEngine(migrationsDirectory, connectionString);
+            Console.WriteLine($"Database Migration Successful: {migration.Successful}");
+        }
+
+        protected virtual DatabaseUpgradeResult MigrateWithEngine(string migrationsDirectory, string connectionString)
+        {
+            var engine = DeployChanges.To
+                            .SqlDatabase(connectionString)
+                            .WithScriptsFromFileSystem(migrationsDirectory)
+                            .LogToConsole()
+                            .Build();
+
+            var migration = engine.PerformUpgrade();
+            return migration;
+        }
+    }
+}
+
+```
+
+Metoda GetConnectionString wyciągnie szczegóły połączenia z appsettings.json naszej aplikacji webowej, żeby nie trzymać tego w wielu miejscach:
+
+```csharp
+protected virtual string GetConnectionString(string appSettingsPath, string connectionStringName)
+{
+    var config = JValue.Parse(File.ReadAllText(appSettingsPath));
+    string connectionString = config["ConnectionStrings"][connectionStringName].ToString();
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new ArgumentException($"The name of the connection string {connectionStringName} is not found in {appSettingsPath} > ConnectionStrings section",
+            nameof(connectionStringName));
+    }
+    return connectionString;
+}
+```
+
+Migratora uruchomimy w Program.cs
+
+```csharp
+class Program
+{
+    static void Main(string[] args)
+    {
+        ValidateArguments(args);
+
+        DbMigrator migrator = new DbMigrator();
+
+        migrator.Migrate(appSettingsPath: args[0], connectionStringName:args[1], migrationsDirectory:args[2]);
+    }
+
+    private static void ValidateArguments(string[] args)
+    {
+        if (args.Length != 3)
+        {
+            throw new ArgumentOutOfRangeException(nameof(args),
+                "usage: TopicalTagsMigrations.exe 'Path/To/appsettings.json' 'ConnectionStringName' 'Migration/scripts/directory'");
+        }
+        if (!File.Exists(args[0]))
+        {
+            throw new FileNotFoundException($"The app settings file in first argument does not exist: {args[0]}");
+        }
+        if (!Directory.Exists(args[2]))
+        {
+            throw new DirectoryNotFoundException($"The scripts directory in second argument does not exist: {args[1]}");
+        }
+    }
+}
+```
+
+Możliwości wykorzystania tego są dwie:
+
+1. Możemy zrezygnować z projektu SQL i trzymać wersję bazy danych tylko w formie migracji
+2. Możemy wykorzystać projekt SQL do trzymania całościowej struktury bazy danych (widok z lotu ptaka) i wykorzystać wspomniany SqlPackage do generowania migracji!
+
+Idąc tropem drugiej opcji będziemy chcieli trzymać migracje w folderze `Migrations` naszego projektu DbUp. Do wykonania migracji wystarczyło by wywołać więc:
+
+```powershell
+# RunMigrations.ps1
+dotnet run "../TopicaltagsWebTest/appsettings.json" "DefaultDatabase" "./Migrations/"
+```
+
+Do wygenerowania migracji potrzebujemy wykonać SqlPackage z akcją _Script_ i zapisać plik według wybranej konwencji, aby zachować kolejność. Zapiszmy to w znów w Powershellu:
+
+```powershell
+#AddMigration.ps1
+param (
+    [Parameter(Position = 0, Mandatory = $true)]
+    [string]
+    $migration,
+    [string]
+    $migrationsFolder = "./Migrations"
+)
+
+function Get-MigrationFilePath()
+{
+    param([string]$migrationName, [string]$migrationsLocation)
+
+    # Locate folder with migrations
+	if(-not [System.IO.Path]::IsPathRooted($migrationsLocation)){
+        $location = Get-Location
+        $migrationsLocation = [System.IO.Path]::Combine($location, $migrationsLocation)
+    }
+
+    # Find highest number prefix in existing migrations
+	$allMigrations = [System.IO.Directory]::GetFiles($migrationsLocation, "*.sql")
+
+	$maxMigration = 0;
+	foreach($existingMigration in $allMigrations)
+	{
+		$existingMigrationName = [System.IO.Path]::GetFileNameWithoutExtension($existingMigration)
+		$existingMigrationNumber = 0;
+		if([int]::TryParse($existingMigrationName.Substring(0,4).TrimStart('0'),  [ref] $existingMigrationNumber)){
+			$maxMigration = [Math]::Max($maxMigration, $existingMigrationNumber)
+		}
+	}
+
+    # Generate a name for the new migration with a higher prefix.
+	$migrationNumberValue = ($maxMigration+1).ToString().PadLeft(4,'0')
+	$migrationFile = [System.IO.Path]::Combine($migrationsLocation,"$migrationNumberValue-$migrationName.sql")
+
+	return $migrationFile
+}
+
+$outputPath = Get-MigrationFilePath -migrationName $migration -migrationsLocation $migrationsFolder
+
+# Run migration generation
+$sqlPackageExe = "C:\Program Files (x86)\Microsoft SQL Server\140\DAC\bin\SqlPackage.exe"
+&$sqlPackageExe /Action:Script `
+	/SourceFile:"../TopicalTags/bin/Debug/TopicalTags.dacpac" `
+	/Profile:../TopicalTags/TopicalTags.publish.xml `
+	/OutputPath:$outputPath
+
+```
+
+Kilka wskazówek na koniec:
+
+1. Jak wspominałem wcześniej, SqlPackage generuje skrypt ze wstawkami SQLCMD (między innymi zmiennymi). Ponieważ DbUp nie wspiera tej składni, to wygenerowaną migrację trzeba oczyścić tak od `USE [$(DatabaseName)]` włącznie w górę.
+2. Prawdopodobnie też w każdej migracji nie będziemy chcieli zawierać wszystkich skryptów Pre/Post Deploy. Trzeba więc dostosować konfigurację do swoich potrzeb.
+3. Pierwszą migrację wygenerujmy na pustej bazie - w ten sposób stworzymy migrację z aktualną strukturą zdefiniowaną w projekcie SQL
+4. Jeżeli korzystamy z DbUp, trzeba ustalić jeden sposób w zespole na tworzenie nowej bazy danych (np. lokalnej dla dewelopera). W tej chwili postawienie bazy przez opcję _Publish_ na projekcie SQL nie stworzy tabeli przechowywującej stan wykonania wszystkich migracji. DbUp w tym przypadku będzie próbował je wykonać, pomimo, że wersja bazy może odpowiadać stanowi po najnowszej migracji.
+5. Wywołanie DbUp można również dodać na starcie aplikacji - podobnie jak można to zrobić w podejściu Code First.
+
+### Współdzielenie kodu i rozwiązywanie konfliktów
+
+Podobnie jak wcześniej - zmiany na bazie są częścią kodu. W migracjach natomiast trzeba uważać, żeby przy powtarzających się numerach porządkowych nie były wykonywane akcje będące w konflikcie.
+
+### Dywersyfikacja Środowiska
+
+DbUp nie wymusza bardzo ścisłej konwencji tak jak na przykład [Roundhouse](https://github.com/chucknorris/roundhouse). Wykonanie każdego skryptu możemy uzależnić od czegokolwiek, np. ustawienia w App.config/appsettings.json lub zmiennej kompilacji. Jesteśmy w stanie niektóre skrypty wykonać raz, inne zawsze przy migracji. Podejście będzie zdeterminowane przez wymagania konkretnego projektu.
+
 ## Code First (Entity Framework)
+
+Nie widziałem statystyk na ten temat, jednak odnoszę wrażenie, że metoda Code First jest najpopularniejsza we wszystkich nowych projektach. Są jednak przeciwnicy tego rozwiązania, którzy będą przeciwko abstrahowania struktury bazy danych w języku o innym przeznaczeniu. Niekoniecznie przeciwni będą tylko administratorzy Baz Danych w obawie o stanowisko ;) W tych zarzutach jest dużo racji, niemniej jest to metoda o dużych możliwościach.
 
 ## Usprawiedliwenie
 

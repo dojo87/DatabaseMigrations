@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TopicalTagsMigrations": {
+      "commandName": "Project",
+      "commandLineArgs": "\"$(SolutionDir)\\TopicalTagsWebTest\\appsettings.json\" DefaultDatabase \"$(SolutionDir)\\TopicalTags\\Migrations\""
+    }
+  }
+}
