@@ -99,7 +99,7 @@ W nawiasie podaję _Build Action_ jaki musimy ustawić we właściwościach plik
 A tak wyglądają skrypty:
 
 ```sql
-# Tag.sql
+-- Tag.sql
 CREATE TABLE [dbo].[Tag]
 (
 	[Id] INT NOT NULL PRIMARY KEY,
@@ -108,7 +108,7 @@ CREATE TABLE [dbo].[Tag]
 ```
 
 ```sql
-# Topic.sql
+-- Topic.sql
 CREATE TABLE [dbo].[Topic]
 (
 	[Id] INT NOT NULL PRIMARY KEY,
@@ -118,7 +118,7 @@ CREATE TABLE [dbo].[Topic]
 ```
 
 ```sql
-# TopicTags.sql
+-- TopicTags.sql
 CREATE TABLE [dbo].[TopicTags]
 (
 	[TopicId] INT NOT NULL,
@@ -130,7 +130,7 @@ CREATE TABLE [dbo].[TopicTags]
 ```
 
 ```sql
-# TestData.sql
+-- TestData.sql
 IF NOT EXISTS (SELECT TOP 1 Id FROM Topic)
 BEGIN
     PRINT 'Data seed - Inserting test [Topic]'
@@ -150,7 +150,7 @@ END;
 ```
 
 ```sql
-# TagConfiguration.sql
+-- TagConfiguration.sql
 
 -- W przypadku Tagów zastosujemy podejście UPSERT.
 -- Chcemy zawsze zadbać o to, że w bazie będzie te 10 tagów jednocześnie pozwalając, że w aplikacji może zachodzić jakaś administracja i dodawanie nowych tagów.
@@ -185,7 +185,7 @@ DROP TABLE #TempTags;
 ```
 
 ```sql
-# PostScript.sql
+-- PostScript.sql
 print "Running Post Deploy Scripts"
 :r .\TagConfiguration.sql
 :r .\TestData.sql
@@ -316,11 +316,17 @@ END;
 W momencie jak to piszę, Entity Framework Core (dalej EF) jeszcze nie wspiera relacji wiele do wielu zbyt dobrze ([link do github](https://github.com/aspnet/EntityFramework/issues/1368)).
 Będziemy musieli zadowolić się obiektem pośredniczącym. Zobaczymy jednak jak szybko można coś wygenerować. Dalszy opis zakłada, że znasz podstawy EF oraz wiesz czym jest obiekt kontekstu `DbContext`
 
-Listę linków z tagami wypiszemy w najprostrzej aplikacji ASP.NET Core (MVC). Po utworzeniu projektu zaczniemy od wygenerowania modelu naszej bazy. Zainstalujmy Entity Framework Core wraz z narzędziami.
+Listę linków z tagami wypiszemy w najprostrzej aplikacji ASP.NET Core (MVC). Po utworzeniu projektu zaczniemy od wygenerowania modelu naszej bazy. Jeżeli w ten sposób utworzymy nowy projekt, to Entity Framework Core wraz z kilkoma bibliotekami komplementarnymi jest już w zależnościach projektu. Niemniej, gdyby okazało się, że w twoim projekcie czegoś brakuje, upewnij się, że odpowiednie komponenty są zainstalowane:
 
 ```powershell
 dotnet add package Microsoft.EntityFrameworkCore --version 2.2.6
+dotnet add package Microsoft.EntityFrameworkCore.Design --version 2.2.6
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 2.2.6
+dotnet add package Microsoft.Extensions.Configuration.Json --version 2.2.0
 ```
+
+Paczka `Design` przychodzi nam z pomocą przez dodatkowe możliwości CLI dotnet - dzięki niej będziemy w stanie wygenerować nasze klasy ORM zamiast ich pisać.
+SqlServer definiuje implementację klienta, którą użyjemy.
 
 Dodajmy do appsettings.json nasz Connection String:
 
@@ -678,7 +684,290 @@ DbUp nie wymusza bardzo ścisłej konwencji tak jak na przykład [Roundhouse](ht
 
 ## Code First (Entity Framework)
 
-Nie widziałem statystyk na ten temat, jednak odnoszę wrażenie, że metoda Code First jest najpopularniejsza we wszystkich nowych projektach. Są jednak przeciwnicy tego rozwiązania, którzy będą przeciwko abstrahowania struktury bazy danych w języku o innym przeznaczeniu. Niekoniecznie przeciwni będą tylko administratorzy Baz Danych w obawie o stanowisko ;) W tych zarzutach jest dużo racji, niemniej jest to metoda o dużych możliwościach.
+Nie widziałem statystyk na ten temat, jednak odnoszę wrażenie, że metoda Code First jest najpopularniejsza we wszystkich nowych projektach. Są jednak przeciwnicy tego rozwiązania, którzy będą przeciwko abstrahowania struktury bazy danych w języku o innym przeznaczeniu. Niekoniecznie przeciwni będą tylko administratorzy Baz Danych w obawie o stanowisko ;) W tych zarzutach jest dużo racji, niemniej jest to metoda o dużych możliwościach. Jak sama nazwa wskazuje, źródłem prawdy o bazie danych jest kod aplikacji - klasy reprezentujące naszą bazę. Najpierw je piszemy, następnie na ich podstawie generujemy zmiany na bazie.
+
+Oczywiście odzwierciedlenie bazy danych w klasach C# nie jest tak jednoznaczne, dlatego będziemy musieli trzymać się konwencji nazewnictwa lub dodatkowo konfigurować konteks, aby oddać wszystkie aspekty bazy danych.
+Zacznijmy od pustego projektu _Class Library_ - TopicalTagsCodeMigrations .
+
+```powershell
+dotnet add package Microsoft.EntityFrameworkCore --version 2.2.6
+dotnet add package Microsoft.EntityFrameworkCore.Design --version 2.2.6
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 2.2.6
+dotnet add package Microsoft.Extensions.Configuration.Json --version 2.2.0
+```
+
+Stworzymy również nową bazę danych dla celów testowych.
+Zmieniam w appsettings.json projektu Webowego:
+
+```json
+{
+  "...": "...",
+  "ConnectionStrings": {
+    "DefaultDatabase": "Server=(localdb)\\mssqllocaldb;Database=TopicalTagsCodeFirst;Integrated Security=True"
+  }
+}
+```
+
+I kopiuję go do mojego nowego projektu.
+
+### Aktualizacja
+
+Standardowo klasy pisalibyśmy od zera, natomiast ja pójdę na skróty i skopiuje sobie klasy wygenerowane w projekcie. Kopiuję klasy Tag, Topic, TopicTags i udaję, że je właśnie napisałem ;)
+Zauważmy, że w kodzie wygenerowanym wcześniej, TopicContext zawiera jeszcze dużo dodatkowej konfiguracji. Możemy ją tworzyć właśnie w metodzie DbContext.OnModelCreating lub też w wielu przypadkach poradzić sobie za pomocą atrybutów do określenia kluczy głównych, ograniczeń niektórych propercji itd.
+
+W tym przypadku dodajmy na naszych klasach odpowiednie atrybuty Key oraz MaxLength.
+
+```csharp
+public partial class Topic
+{
+    public Topic()
+    {
+        TopicTags = new HashSet<TopicTags>();
+    }
+
+    [Key]
+    public int Id { get; set; }
+
+    [MaxLength(2000)]
+    public string Title { get; set; }
+
+    [MaxLength(2000)]
+    public string Url { get; set; }
+
+    public virtual ICollection<TopicTags> TopicTags { get; set; }
+}
+
+public partial class Tag
+{
+    public Tag()
+    {
+        TopicTags = new HashSet<TopicTags>();
+    }
+
+    [Key]
+    public int Id { get; set; }
+
+    [MaxLength(255)]
+    public string Name { get; set; }
+
+    public virtual ICollection<TopicTags> TopicTags { get; set; }
+}
+```
+
+Klasę kontekstu dodamy ręcznie. Ponieważ wszystko definiujemy w _Class Library_, musimy zdefiniować bazę danych na której pracujemy dla narzędzi EF.
+Możemy w tym celu zaimplementować domyślny konstruktor podający domyślny _Connection String_ lub trzymać w projekcie implementację `IDesignTimeDbContextFactory`, która z `appsettings.json` wyciągnie informacje na temat naszego połączenia.
+
+```csharp
+ public class TopicContext : DbContext
+{
+    public TopicContext() : base()
+    {
+
+    }
+
+    /// <summary>
+    /// This constructor will be used with Service Provider
+    /// </summary>
+    /// <param name="options"></param>
+    public TopicContext(DbContextOptions<TopicContext> options) : base(options)
+    {
+
+    }
+
+    public DbSet<Topic> Topics { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+
+}
+
+/// <summary>
+/// This class is required for the design time tools to work on the Class Library.
+/// When in a ASP.NET project, this is automatically determined by the Service Provider, so need to have this there.
+/// Here thought we need to provide a source of our connection string - we will use App Settings.
+/// </summary>
+public class TopicContextFactory : IDesignTimeDbContextFactory<TopicContext>
+{
+    public TopicContext CreateDbContext(string[] args)
+    {
+        var configurationBuilder = new ConfigurationBuilder();
+
+        string connectionName = Environment.GetEnvironmentVariable("CONNECTION_NAME") ?? "DefaultDatabase";
+        configurationBuilder.AddJsonFile("appsettings.json");
+        IConfiguration configuration = configurationBuilder.Build();
+
+        string connectionString = configuration.GetConnectionString(connectionName);
+        var optionsBuilder = new DbContextOptionsBuilder<TopicContext>();
+        optionsBuilder.UseSqlServer(connectionString);
+
+        return new TopicContext(optionsBuilder.Options);
+    }
+}
+```
+
+Następnie polecenie `dotnet ef migrations add Initial` wygeneruje nam pierwszą migrację z kodu.
+Moglibyśmy już ręcznie zaktualizować bazę danych przez `dotnet ef database update`, jednak skorzystamy tutaj z możliwości aktualizacji przy starcie aplikacji.
+
+Najpierw na starcie będziemy chcieli jednak dodać dane konfiguracyjne i testowe tak jak w przypadku projektu SQL.
+
+Dla porządku zmieńmy nasz `TopicContext` dodając słowo `partial` i w nowym pliku `TopicalContext.Seed.cs` dodajmy metody dbające o dodanie danych testowych:
+
+```csharp
+public partial class TopicContext
+{
+    public void OnSeed()
+    {
+        Dictionary<int, Tag> tags = new Dictionary<int, Tag>();
+
+        tags.Add(1, new Tag(1, "Answers"));
+        tags.Add(2, new Tag(2, "Worldview"));
+        tags.Add(3, new Tag(3, "Christianity"));
+        tags.Add(4, new Tag(4, "Science"));
+        tags.Add(5, new Tag(5, "Biology"));
+        tags.Add(6, new Tag(6, "Plants"));
+        tags.Add(7, new Tag(7, "Astronomy"));
+        tags.Add(8, new Tag(8, "Age of the Universe"));
+        tags.Add(9, new Tag(9, "Evolution"));
+        tags.Add(10, new Tag(10, "Origin of Life"));
+
+        UpsertTags(tags);
+
+        if (!this.Topics.Any())
+        {
+            this.Topics.AddRange(
+                    new Topic("Origin of Life Problems for Naturalists", "https://answersingenesis.org/origin-of-life/origin-of-life-problems-for-naturalists/")
+                    .AddTags(tags[1], tags[9], tags[10]),
+
+                    new Topic("Power Plants", "https://answersingenesis.org/biology/plants/power-plants/")
+                    .AddTags(tags[1], tags[3], tags[5], tags[6]),
+
+                    new Topic("Evidence for a Young World", "https://answersingenesis.org/astronomy/age-of-the-universe/evidence-for-a-young-world/")
+                    .AddTags(tags[1], tags[4], tags[7], tags[8]),
+
+                    new Topic("Are Atheists Right? Is Faith the Absence of Reason/Evidence?", "https://answersingenesis.org/christianity/are-atheists-right/")
+                    .AddTags(tags[1], tags[2], tags[3])
+                    );
+
+        }
+
+        this.SaveChanges();
+
+    }
+
+    private void UpsertTags(Dictionary<int, Tag> tags)
+    {
+        var keys = tags.Keys.ToList();
+
+        var upsertedTags = this.Tags
+            .Where(t => keys.Contains(t.Id)).Select(t => t.Id)
+            .ToList();
+
+        this.AttachRange(tags.Values
+            .Where(t => upsertedTags.Contains(t.Id)));
+
+        this.AddRange(tags.Values
+            .Where(t => !upsertedTags.Contains(t.Id))
+            .Select(tag => { tag.Id = 0; return tag; }));
+    }
+}
+```
+
+Wywołujemy kod w Startup.cs:
+
+```csharp
+public void Configure(IApplicationBuilder app,
+    IHostingEnvironment env)
+{
+    //...
+    DataSeed(app);
+}
+
+private void DataSeed(IApplicationBuilder app)
+{
+    using (var scope = app.ApplicationServices.CreateScope())
+    {
+        using (var ctx = scope.ServiceProvider.GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
+        {
+            ctx.OnSeed();
+        }
+    }
+}
+```
+
+### Automatyzacja
+
+Chcemy zautomatyzować wykonanie również samych migracji przy starcie aplikacji. Dodajemy nasz projekt do referencji projektu Webowego, następnie musimy podmienić kilka miejsc w naszej aplikacji:
+
+1. Startup.cs
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services
+      .AddDbContext<TopicalTagsCodeMigrations.Model.TopicContext>
+        (options => options .UseSqlServer(this.Configuration
+           .GetConnectionString("DefaultDatabase")));
+}
+```
+
+2. HomeController.cs -> zamiast `using TopicalTagsWebTest.Model;` będzie `using TopicalTagsCodeMigrations.Model;`
+
+3. Index.cshtml -> podobnie zamiast `@using TopicalTagsWebTest.Model` będzie `@using TopicalTagsCodeMigrations.Model`
+
+Następnie możemy dodać wywołanie migracji w Startup.cs
+
+```csharp
+public void Configure(IApplicationBuilder app,
+    IHostingEnvironment env)
+{
+    //...
+    InitializeDatabase(app);
+}
+
+private void InitializeDatabase(IApplicationBuilder app)
+{
+    // AddDbContext is creating a Scoped lifetime context
+    // In this case we do not have a Request scope, so let's create
+    // our own.
+    using (var scope = app.ApplicationServices.CreateScope())
+    {
+        using (var ctx = scope.ServiceProvider
+            .GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
+        {
+            ctx.Database.Migrate();
+        }
+    }
+}
+```
+
+### Rozwiązywanie Konfliktów
+
+W porównaniu z starszym EF, tym razem obraz naszego modelu nie jest trzymany w jakimś przydługawym i skompresowanym zasobie, ale w formie klasy C#.
+W razie stwierdzenia poważnego konfliktu, kiedy dwóch programistów zmienia dokładnie to samo, postępowanie jest następujące:
+
+1. Cofnij Merge'a
+2. Usuń swoją migrację przez `dotnet ef migrations remove` pozostawiając zmiany na swoim modelu.
+3. Zmerguj kod kolegi
+4. Utwórz swoją migrację (o ile faktycznie decydujesz się zmienić coś po koledze ;))
+
+### Dywersyfikacja Środowiska
+
+Podobnie jak w przypadku DbUp, tutaj mamy całkowitą swobodę synchronizacji danych przez implementację w kodzie. W tym przypadku możemy korzystać z konfiguracji w `appsettings.json` lub na przykład wstrzykniętego `IHostingEnvironment`:
+
+```csharp
+// Startup.cs
+private void DataSeed(IApplicationBuilder app,
+    IHostingEnvironment env)
+{
+    using (var scope = app.ApplicationServices.CreateScope())
+    {
+        using (var ctx = scope.ServiceProvider.GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
+        {
+            ctx.OnSeed(env.IsDevelopment());
+        }
+    }
+}
+```
+
+Znów ogranicza nas tylko wymaganie projektowe.
 
 ## Usprawiedliwenie
 

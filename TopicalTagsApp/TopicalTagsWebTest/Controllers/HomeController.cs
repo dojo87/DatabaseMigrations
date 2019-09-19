@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using TopicalTagsWebTest.Model;
+using TopicalTagsCodeMigrations.Model;
 
 namespace TopicalTagsWebTest.Controllers
 {
@@ -16,7 +16,7 @@ namespace TopicalTagsWebTest.Controllers
 
         public IActionResult Index()
         {
-            var allTopics = Repo.Topic
+            var allTopics = Repo.Topics
                 .Include(t => t.TopicTags)
                 .ThenInclude(t => t.Tag)
                 .ToList();

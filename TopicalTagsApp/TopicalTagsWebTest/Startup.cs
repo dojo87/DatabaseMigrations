@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TopicalTagsWebTest.Model;
@@ -25,7 +26,6 @@ namespace TopicalTagsWebTest
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
@@ -33,7 +33,10 @@ namespace TopicalTagsWebTest
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddDbContext<TopicContext>();
+            services.AddDbContext<TopicalTagsCodeMigrations.Model.TopicContext>(options => options
+                .UseSqlServer(this.Configuration.GetConnectionString("DefaultDatabase")));
+
+            
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
@@ -61,6 +64,31 @@ namespace TopicalTagsWebTest
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
+
+            InitializeDatabase(app);
+            DataSeed(app, env);
+        }
+
+        private void InitializeDatabase(IApplicationBuilder app)
+        {
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                using (var ctx = scope.ServiceProvider.GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
+                {
+                    ctx.Database.Migrate();
+                }
+            }
+        }
+
+        private void DataSeed(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                using (var ctx = scope.ServiceProvider.GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
+                {
+                    ctx.OnSeed(env.IsDevelopment());
+                }
+            }
         }
     }
 }
