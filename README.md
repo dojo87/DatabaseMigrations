@@ -48,7 +48,7 @@ W artykule pominę _Model First_ z którym osobiście najmniej miałem do czynie
 Niezależnie od wybranego podejście nie jest dobrze, aby strukturę bazy danych trzymać w samej instancji bazy albo jakimkolwiek binarnym tworze. Powinna ona sprowadzać się do kodu utrzymanego w kontroli wersji (to raz) i pozwalać na łatwą edycję i rozwiązywanie konfliktów. Mając jednak kod możemy trzymać **stan** struktury bazy (zbiór tabel, widoczków itd.) i/lub listę zmian powstałych w trakcie rozwoju oprogramowania - **tranzycji**.  
 Nawet jeśli w kodzie będziemy przechowywać sam **stan** to musimy umieć uzyskać tranzycje, które będą użyte do zaktualizowania baz danych na kolejnych środowiskach - może to jednak być zautomatyzowane (choć lepiej, żeby generowanie takiego skryptu _musiało_ być automatyczne).
 
-## Database First
+## Database First ze stanem
 
 Podejście database first zakłada, że źródło prawdy jest zdefiniowane w języku bazy danych. Ona powstaje pierwsza i determinuje model i kod programu.
 W przypadku _Database First_ **stanem** będzie zbiór skryptów opisujących pełne obiekty bazy danych np. zupełna definicja tabeli:
@@ -78,7 +78,7 @@ Możemy również połączyć jedno i drugie aby w danej chwili mieć pełny obr
 3. [DbUp](https://dbup.readthedocs.io/en/latest/) do automatyzacji wersji wzbogaconej o tranzycje
 4. [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/) do synchronizacji kodu (użyjemy v2.x.x)
 
-### Podstawowa Implementacja - Aktualizacja, Automatyzacja i AAARozwiązywanie Konfliktów
+### Podstawowa Implementacja - Aktualizacja i Automatyzacja
 
 Nową solucję stworzymy zaczynając od projektu _SQL Server Database Project_.
 Produktem tego projektu jest binarny plik DACPAC zawierający `schema` i dane pochodzące ze skryptów. Pozwala on narzędziu SqlPackage na porównanie DACPAC z docelową bazą danych i automatyczne wygenerowanie skryptów tranzycji oraz zastosowanie ich na tej bazie.
@@ -215,6 +215,8 @@ $sqlPackageExe = "C:\Program Files (x86)\Microsoft SQL Server\140\DAC\bin\SqlPac
 
 Odpalenie skryptu już bez pytania aktualizuje nam bazę. Możemy jednak na wiele innych sposobów ustawić sobie parametry tego procesu np. w Continues Delivery - SqlPackage ma wiele parametrów https://docs.microsoft.com/en-us/sql/tools/sqlpackage.
 
+### Rozwiązywanie Konfliktów
+
 Taki zestaw skryptów bez problemu udostępniamy w naszym repozytorium kodu i rozwiązywanie konfliktów odbywa się jak w przypadku każdego innego skryptu.
 
 ### Dywersyfikacja Środowiska
@@ -311,7 +313,7 @@ BEGIN
 END;
 ```
 
-## Synchronizacja z ORM
+## Synchronizacja z Kodem
 
 W momencie jak to piszę, Entity Framework Core (dalej EF) jeszcze nie wspiera relacji wiele do wielu zbyt dobrze ([link do github](https://github.com/aspnet/EntityFramework/issues/1368)).
 Będziemy musieli zadowolić się obiektem pośredniczącym. Zobaczymy jednak jak szybko można coś wygenerować. Dalszy opis zakłada, że znasz podstawy EF oraz wiesz czym jest obiekt kontekstu `DbContext`
@@ -405,7 +407,7 @@ namespace TopicalTagsWebTest.Controllers
                 .Include(t => t.TopicTags)
                 .ThenInclude(t => t.Tag)
                 .ToList();
-            return View(allTopics); // Zwracamy obiekty bezpośrednio dla uproszczenia przykładu.
+            return View(allTopics); // To simplify the Example, we just return the Entity object.
         }
     }
 }
@@ -676,11 +678,52 @@ Kilka wskazówek na koniec:
 
 ### Współdzielenie kodu i rozwiązywanie konfliktów
 
-Podobnie jak wcześniej - zmiany na bazie są częścią kodu. W migracjach natomiast trzeba uważać, żeby przy powtarzających się numerach porządkowych nie były wykonywane akcje będące w konflikcie.
+Podobnie jak wcześniej - zmiany na bazie są częścią kodu. W migracjach natomiast trzeba uważać, żeby przy powtarzających się numerach porządkowych nie były wykonywane akcje będące w konflikcie. Najprawdopodobniej jednak, jeżeli pozostawimy projekt SQLowy jako część rozwiązania, to konflikt będzie widoczny gołym okiem w plikach tego projektu.
 
 ### Dywersyfikacja Środowiska
 
-DbUp nie wymusza bardzo ścisłej konwencji tak jak na przykład [Roundhouse](https://github.com/chucknorris/roundhouse). Wykonanie każdego skryptu możemy uzależnić od czegokolwiek, np. ustawienia w App.config/appsettings.json lub zmiennej kompilacji. Jesteśmy w stanie niektóre skrypty wykonać raz, inne zawsze przy migracji. Podejście będzie zdeterminowane przez wymagania konkretnego projektu.
+DbUp nie wymusza bardzo ścisłej konwencji tak jak na przykład [Roundhouse](https://github.com/chucknorris/roundhouse). Wykonanie każdego skryptu możemy uzależnić od czegokolwiek, np. ustawienia w App.config/appsettings.json lub zmiennej kompilacji. Jesteśmy w stanie niektóre skrypty wykonać raz, inne zawsze przy każdej migracji.
+
+Możemy nanieść na przykład taką zmianę na migratora:
+
+```csharp
+public void Migrate(string appSettingsPath, string connectionStringName, string migrationsDirectory)
+{
+    string connectionString = GetConnectionString(appSettingsPath, connectionStringName);
+    DbUp.Engine.DatabaseUpgradeResult executionResult = MigrateWithEngine(migrationsDirectory, connectionString);
+    Console.WriteLine($"Database Migration Result: {executionResult.Successful}");
+
+    executionResult = ExecuteAlways(migrationsDirectory, connectionString);
+    Console.WriteLine($"Database Always Executed Script Result: {executionResult.Successful}");
+}
+
+protected virtual DatabaseUpgradeResult MigrateWithEngine(string migrationsDirectory, string connectionString)
+{
+    var engine = DeployChanges.To
+                    .SqlDatabase(connectionString)
+                    .WithScriptsFromFileSystem(migrationsDirectory)
+                    .LogToConsole()
+                    .Build();
+
+    var migration = engine.PerformUpgrade();
+    return migration;
+}
+
+protected virtual DatabaseUpgradeResult ExecuteAlways(string migrationsDirectory, string connectionString)
+{
+    var engine = DeployChanges.To
+                    .SqlDatabase(connectionString)
+                    .WithScriptsFromFileSystem(Path.Combine(migrationsDirectory, "/Always/"))
+                    .JournalTo(new NullJournal())
+                    .LogToConsole()
+                    .Build();
+
+    var migration = engine.PerformUpgrade();
+    return migration;
+}
+```
+
+Podejście będzie zdeterminowane przez wymagania konkretnego projektu i ograniczone wyobraźnią.
 
 ## Code First (Entity Framework)
 
@@ -967,7 +1010,26 @@ private void DataSeed(IApplicationBuilder app,
 }
 ```
 
-Znów ogranicza nas tylko wymaganie projektowe.
+Znów determinuje nas tylko wymaganie projektowe i ogranicza wyobraźnia.
+
+## Podsumowanie
+
+Pokazaliśmy na żywych i praktycznych przykładach trzy różne podejścia do aktualizacji bazy danych, które nadają się do zastosowania w prawdziwych projektach (=w każdym przypadku podejmujemy i rozwiązujemy 6 wyzwań takiego bohaterskiego czynu). Nie miałem a celu faworyzować któregokolwiek podejścia, ale dać praktyczną wiedzę na temat rozwiązań, które można zastosować.
+
+Używałem każdego z tych rozwiązań, ale ważne jest, aby wybrać jedną konwencję, trzymać się jej i dostosować do swoich potrzeb.
+
+### Database First
+
+Wykorzystując potężne narzędzie SqlPackage jesteśmy w stanie w elegancki sposób implementować naszą bazę, automatyzować aktualizację prostym wywołaniem konsolowym, rozwiązywać konflikty z tą samą prostotą jak dla reszty kodu i dywersyfikować skrypty względem środowiska. Z pomocą Entity Framework bez problemu również przenosimy nasze tabulki do kodu biznesowego w postaci klas.
+
+### Database First z Migracjami
+
+Dodając do rozwiązania wykonanie migracji z DbUp byliśmy w stanie również wzbogacić rozwiązanie o większą kontrolę nad zmianami, które wykonujemy na bazie iteracyjnie zachowując przy tym wszystko co mieliśmy w poprzednim rozwiązaniu.
+
+### Code First
+
+Poświęciliśmy temu rozwiązaniu stosunkowo mało czasu ze względu na popularność różnych blogów i kursów na ten temat, jednak dla tych, którzy chcą mieć z SQL jak najmniej do czynienia jest to również rozwiązanie szeroko stosowane.
+Aktualizujemy i automatyzujemy korzystając z wywołań CLI lub bezpośrednio w kodzie. Fakt ten również daje nam bezproblemowo dywersyfikować stan naszej bazy w zależności od w zasadzie jakiegokolwiek warunku. Nowe EF ulepsza również podejście do rozwiązywania konfliktów w współdzielonych repozytoriach.
 
 ## Usprawiedliwenie
 

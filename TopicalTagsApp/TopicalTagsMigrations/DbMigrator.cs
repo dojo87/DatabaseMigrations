@@ -1,5 +1,6 @@
 ﻿using DbUp;
 using DbUp.Engine;
+using DbUp.Helpers;
 using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
@@ -11,8 +12,11 @@ namespace TopicalTagsMigrations
         public void Migrate(string appSettingsPath, string connectionStringName, string migrationsDirectory)
         {
             string connectionString = GetConnectionString(appSettingsPath, connectionStringName);
-            DbUp.Engine.DatabaseUpgradeResult migration = MigrateWithEngine(migrationsDirectory, connectionString);
-            Console.WriteLine($"Database Migration Successful: {migration.Successful}");
+            DbUp.Engine.DatabaseUpgradeResult executionResult = MigrateWithEngine(migrationsDirectory, connectionString);
+            Console.WriteLine($"Database Migration Result: {executionResult.Successful}");
+
+            executionResult = ExecuteAlways(migrationsDirectory, connectionString);
+            Console.WriteLine($"Database Always Executed Script Result: {executionResult.Successful}");
         }
 
         protected virtual DatabaseUpgradeResult MigrateWithEngine(string migrationsDirectory, string connectionString)
@@ -20,6 +24,19 @@ namespace TopicalTagsMigrations
             var engine = DeployChanges.To
                             .SqlDatabase(connectionString)
                             .WithScriptsFromFileSystem(migrationsDirectory)
+                            .LogToConsole()
+                            .Build();
+
+            var migration = engine.PerformUpgrade();
+            return migration;
+        }
+
+        protected virtual DatabaseUpgradeResult ExecuteAlways(string migrationsDirectory, string connectionString)
+        {
+            var engine = DeployChanges.To
+                            .SqlDatabase(connectionString)
+                            .WithScriptsFromFileSystem(Path.Combine(migrationsDirectory, "/Always/"))
+                            .JournalTo(new NullJournal())
                             .LogToConsole()
                             .Build();
 
