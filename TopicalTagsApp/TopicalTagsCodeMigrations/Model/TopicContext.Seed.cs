@@ -12,18 +12,18 @@ namespace TopicalTagsCodeMigrations.Model
         {
             Dictionary<int, Tag> tags = new Dictionary<int, Tag>();
 
-            tags.Add(1, new Tag(1, "Answers"));
-            tags.Add(2, new Tag(2, "Worldview"));
-            tags.Add(3, new Tag(3, "Christianity"));
-            tags.Add(4, new Tag(4, "Science"));
-            tags.Add(5, new Tag(5, "Biology"));
-            tags.Add(6, new Tag(6, "Plants"));
-            tags.Add(7, new Tag(7, "Astronomy"));
-            tags.Add(8, new Tag(8, "Age of the Universe"));
-            tags.Add(9, new Tag(9, "Evolution"));
-            tags.Add(10, new Tag(10, "Origin of Life"));
-
-            UpsertTags(tags);
+            tags.Add(1, new Tag("Answers"));
+            tags.Add(2, new Tag("Worldview"));
+            tags.Add(3, new Tag("Christianity"));
+            tags.Add(4, new Tag("Science"));
+            tags.Add(5, new Tag("Biology"));
+            tags.Add(6, new Tag("Plants"));
+            tags.Add(7, new Tag("Astronomy"));
+            tags.Add(8, new Tag("Age of the Universe"));
+            tags.Add(9, new Tag("Evolution"));
+            tags.Add(10, new Tag("Origin of Life"));
+         
+            UpsertTags(tags.Values.ToList());
 
             if (!this.Topics.Any())
             {
@@ -47,19 +47,24 @@ namespace TopicalTagsCodeMigrations.Model
 
         }
 
-        private void UpsertTags(Dictionary<int, Tag> tags)
+        private void UpsertTags(List<Tag> tags)
         {
-            var keys = tags.Keys.ToList();
+            var keys = tags.Select(t => t.Name).ToList();
+            var existingTagNameId = this.Tags
+                .Where(t => keys.Contains(t.Name))
+                .ToDictionary(t => t.Name, t => t.Id);
 
-            var upsertedTags = this.Tags
-                .Where(t => keys.Contains(t.Id)).Select(t => t.Id)
-                .ToList();
+            tags.ForEach(t =>
+            {
+                // Get existing Ids
+                if (existingTagNameId.ContainsKey(t.Name))
+                {
+                    t.Id = existingTagNameId[t.Name];
+                }
+            });
 
-            this.AttachRange(tags.Values.Where(t => upsertedTags.Contains(t.Id)));
-
-            this.AddRange(tags.Values
-                .Where(t => !upsertedTags.Contains(t.Id))
-                .Select(tag => { tag.Id = 0; return tag; }));
+            this.AddRange(tags
+                .Where(t => !existingTagNameId.ContainsKey(t.Name)));
         }
     }
 }

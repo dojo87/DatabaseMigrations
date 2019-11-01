@@ -11,9 +11,8 @@ namespace TopicalTagsCodeMigrations.Model
             TopicTags = new HashSet<TopicTags>();
         }
 
-        public Tag(int id, string name) : this()
+        public Tag(string name) : this()
         {
-            Id = id;
             Name = name;
         }
 

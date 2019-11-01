@@ -797,7 +797,7 @@ public partial class Tag
 }
 ```
 
-Klasę kontekstu dodamy ręcznie. Ponieważ wszystko definiujemy w _Class Library_, musimy zdefiniować bazę danych na której pracujemy dla narzędzi EF.
+Klasę kontekstu dodamy ręcznie. Ponieważ wszystko definiujemy w _Class Library_ a nie w projekcie głównym, musimy ręcznie wskazać EF bazę danych na której pracujemy.
 Możemy w tym celu zaimplementować domyślny konstruktor podający domyślny _Connection String_ lub trzymać w projekcie implementację `IDesignTimeDbContextFactory`, która z `appsettings.json` wyciągnie informacje na temat naszego połączenia.
 
 ```csharp
@@ -847,10 +847,12 @@ public class TopicContextFactory : IDesignTimeDbContextFactory<TopicContext>
 ```
 
 Następnie polecenie `dotnet ef migrations add Initial` wygeneruje nam pierwszą migrację z kodu.
-Moglibyśmy już ręcznie zaktualizować bazę danych przez `dotnet ef database update`, jednak skorzystamy tutaj z możliwości aktualizacji przy starcie aplikacji.
+Moglibyśmy już ręcznie zaktualizować bazę danych przez `dotnet ef database update`. Możemy też skorzystać z możliwości aktualizacji bazy danych przy starcie aplikacji. To popularne rozwiązanie w _EF Code First_ ma jednak słabe strony:
 
-Najpierw na starcie będziemy chcieli jednak dodać dane konfiguracyjne i testowe tak jak w przypadku projektu SQL.
+- Proces który logicznie widzielibyśmy jako część ciągłej dostawy, staje się częścią działania samej aplikacji - instalując nową wersję na serwerze nie widzimy, czy aktualizacja przebiegła pomyślnie dopóki nie zaczniemy uruchamiać aplikacji;
+- Wykonanie migracji będzie w wielu przypadkach robione na użytkowniku, który jednocześnie służy do normalnej obsługi aplikacji - potrzebuje on wtedy uprawnień na poziomie _db_owner_ ale w normalnym działaniu aplikacji nie chcielibyśmy funkcjonować na tak wszechstronnym koncie.
 
+Dlatego zastosujemy podejście wywołania z konsoli.
 Dla porządku zmieńmy nasz `TopicContext` dodając słowo `partial` i w nowym pliku `TopicalContext.Seed.cs` dodajmy metody dbające o dodanie danych testowych:
 
 ```csharp
@@ -860,18 +862,20 @@ public partial class TopicContext
     {
         Dictionary<int, Tag> tags = new Dictionary<int, Tag>();
 
-        tags.Add(1, new Tag(1, "Answers"));
-        tags.Add(2, new Tag(2, "Worldview"));
-        tags.Add(3, new Tag(3, "Christianity"));
-        tags.Add(4, new Tag(4, "Science"));
-        tags.Add(5, new Tag(5, "Biology"));
-        tags.Add(6, new Tag(6, "Plants"));
-        tags.Add(7, new Tag(7, "Astronomy"));
-        tags.Add(8, new Tag(8, "Age of the Universe"));
-        tags.Add(9, new Tag(9, "Evolution"));
-        tags.Add(10, new Tag(10, "Origin of Life"));
+        tags.Add(1, new Tag("Answers"));
+        tags.Add(2, new Tag("Worldview"));
+        tags.Add(3, new Tag("Christianity"));
+        tags.Add(4, new Tag("Science"));
+        tags.Add(5, new Tag("Biology"));
+        tags.Add(6, new Tag("Plants"));
+        tags.Add(7, new Tag("Astronomy"));
+        tags.Add(8, new Tag("Age of the Universe"));
+        tags.Add(9, new Tag("Evolution"));
+        tags.Add(10, new Tag("Origin of Life"));
+        tags.Add(11, new Tag("New One"));
+        tags.Add(12, new Tag("And another one"));
 
-        UpsertTags(tags);
+        UpsertTags(tags.Values.ToList());
 
         if (!this.Topics.Any())
         {
@@ -892,50 +896,173 @@ public partial class TopicContext
         }
 
         this.SaveChanges();
-
     }
 
-    private void UpsertTags(Dictionary<int, Tag> tags)
+    private void UpsertTags(List<Tag> tags)
     {
-        var keys = tags.Keys.ToList();
+        var keys = tags.Select(t => t.Name).ToList();
+        var existingTagNameId = this.Tags
+            .Where(t => keys.Contains(t.Name))
+            .ToDictionary(t => t.Name, t => t.Id);
 
-        var upsertedTags = this.Tags
-            .Where(t => keys.Contains(t.Id)).Select(t => t.Id)
-            .ToList();
-
-        this.AttachRange(tags.Values
-            .Where(t => upsertedTags.Contains(t.Id)));
-
-        this.AddRange(tags.Values
-            .Where(t => !upsertedTags.Contains(t.Id))
-            .Select(tag => { tag.Id = 0; return tag; }));
-    }
-}
-```
-
-Wywołujemy kod w Startup.cs:
-
-```csharp
-public void Configure(IApplicationBuilder app,
-    IHostingEnvironment env)
-{
-    //...
-    DataSeed(app);
-}
-
-private void DataSeed(IApplicationBuilder app)
-{
-    using (var scope = app.ApplicationServices.CreateScope())
-    {
-        using (var ctx = scope.ServiceProvider.GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
+        tags.ForEach(t =>
         {
-            ctx.OnSeed();
-        }
+            // Get existing Ids
+            if (existingTagNameId.ContainsKey(t.Name))
+            {
+                t.Id = existingTagNameId[t.Name];
+            }
+        });
+
+        this.AddRange(tags
+            .Where(t => !existingTagNameId.ContainsKey(t.Name)));
     }
 }
 ```
 
 ### Automatyzacja
+
+Zespół EF zdaje się nie do końca jeszcze mieć przemyślanej kwestii aktualizacji bazy danych z konsoli ([https://github.com/aspnet/EntityFramework.Docs/issues/807]). W sieci można znaleźć kilka rozwiązań tegoż problemu z wykorzystaniem dziwnych wywołań z plikiem ef.dll
+
+```powershell
+dotnet exec --depsfile MyApp.deps.json --runtimeconfig MyApp.runtimeconfig.json ef.dll database update
+```
+
+To rozwiązanie nie przypadło mi do gustu, dlatego proponuję wywołanie migracji przez aplikację webową, ale z flagą przekazaną na starcie. W końcu ASP.NET Core jest w gruncie rzeczy zwykłą konsolówką.
+Potraktujmy ją tak. Zamkniemy funkcjonalność migracji w zgrabną klasę.
+Najpierw inicjalizujemy migratora konfiguracją z pliku:
+
+```csharp
+public class DbMigrator
+{
+    public static DbMigrator WithDefaultConfiguration()
+    {
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        Console.WriteLine($"Using default appsettings.json configuration file along with environmental configs. Environment: {environmentName ?? "Default"}");
+
+        IConfiguration config = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", true, true)
+            .AddJsonFile($"appsettings.{environmentName}.json", optional: true)
+            .Build();
+
+        return new DbMigrator(config);
+    }
+
+    public DbMigrator(IConfiguration configuration)
+    {
+        Configuration = configuration;
+    }
+
+    private IConfiguration Configuration { get; set; }
+}
+```
+
+Potem rozszerzmy o inicjalizację kontekstu:
+
+```csharp
+public class DbMigrator : IDisposable
+{
+    public static DbMigrator WithDefaultConfiguration() { /*...*/ }
+
+    public DbMigrator(IConfiguration configuration){ /*...*/ }
+
+    private IConfiguration Configuration { get; set; }
+
+    private const string DefaultConnectionStringName = "DefaultDatabase";
+
+    private TopicContext Context { get; set; }
+
+    public DbMigrator UsingConnectionStringName(string connectionStringName)
+    {
+        // Typical EF Core initialization.
+        DbContextOptionsBuilder<TopicContext> options = new DbContextOptionsBuilder<TopicContext>();
+        options.UseSqlServer(this.Configuration.GetConnectionString(connectionStringName));
+        Context = new TopicContext(options.Options);
+
+        return this;
+    }
+
+    private void EnsureContextInitialized()
+    {
+        if (Context == null)
+        {
+            Console.WriteLine("Initializing Context");
+            UsingConnectionStringName(DefaultConnectionStringName);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (Context != null)
+        {
+            Context.Dispose();
+        }
+    }
+}
+```
+
+I na koniec dodajmy metody do migracji i "zasiewania" danych:
+
+```csharp
+public class DbMigrator : IDisposable
+{
+    public static DbMigrator WithDefaultConfiguration() { /*...*/ }
+
+    private const string DefaultConnectionStringName = "DefaultDatabase";
+
+    private TopicContext Context { get; set; }
+
+    private IConfiguration Configuration { get; set; }
+
+    public DbMigrator(IConfiguration configuration){ /*...*/ }
+
+    public void MigrateDatabase()
+    {
+        Console.WriteLine("Migrating database started");
+        EnsureContextInitialized();
+        this.Context.Database.Migrate();
+    }
+
+    public void RunDataSeed()
+    {
+        Console.WriteLine("Data Seed");
+        EnsureContextInitialized();
+        Context.OnSeed();
+    }
+
+    private void EnsureContextInitialized(){ /*...*/ }
+
+    public DbMigrator UsingConnectionStringName(string connectionStringName){ /*...*/ }
+
+    public void Dispose(){ /*...*/ }
+}
+```
+
+Jeżeli sytuacja tego wymaga, możemy dodać specjalny _Connection String_ używany do migracji i podać go do migratora jako parametr. Całość wywołujemy w Program.cs naszego projektu webowego:
+
+```csharp
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        if (args.Any(a => a.Equals("--migration")))
+        {
+            using (DbMigrator migrator = DbMigrator.WithDefaultConfiguration()
+                .UsingConnectionStringName("MigrationConnectionString"))
+            {
+                migrator.MigrateDatabase();
+                migrator.RunDataSeed();
+            }
+        }
+        else
+        {
+            CreateWebHostBuilder(args).Build().Run();
+        }
+    }
+
+    //...
+}
+```
 
 Chcemy zautomatyzować wykonanie również samych migracji przy starcie aplikacji. Dodajemy nasz projekt do referencji projektu Webowego, następnie musimy podmienić kilka miejsc w naszej aplikacji:
 

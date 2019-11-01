@@ -65,8 +65,8 @@ namespace TopicalTagsWebTest
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            InitializeDatabase(app);
-            DataSeed(app, env);
+            //InitializeDatabase(app);
+            //DataSeed(app, env);
         }
 
         private void InitializeDatabase(IApplicationBuilder app)
