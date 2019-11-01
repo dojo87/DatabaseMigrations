@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TopicalTagsCodeMigrations;
 using TopicalTagsWebTest.Model;
 
 namespace TopicalTagsWebTest
@@ -65,29 +66,16 @@ namespace TopicalTagsWebTest
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            //InitializeDatabase(app);
-            //DataSeed(app, env);
+            InitializeDatabase(app);
         }
 
         private void InitializeDatabase(IApplicationBuilder app)
         {
-            using (var scope = app.ApplicationServices.CreateScope())
+            using (DbMigrator migrator = DbMigrator.WithDefaultConfiguration()
+                    .UsingConnectionStringName("MigrationConnectionString"))
             {
-                using (var ctx = scope.ServiceProvider.GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
-                {
-                    ctx.Database.Migrate();
-                }
-            }
-        }
-
-        private void DataSeed(IApplicationBuilder app, IHostingEnvironment env)
-        {
-            using (var scope = app.ApplicationServices.CreateScope())
-            {
-                using (var ctx = scope.ServiceProvider.GetService<TopicalTagsCodeMigrations.Model.TopicContext>())
-                {
-                    ctx.OnSeed(env.IsDevelopment());
-                }
+                migrator.MigrateDatabase();
+                migrator.RunDataSeed();
             }
         }
     }

@@ -1064,7 +1064,8 @@ public class Program
 }
 ```
 
-Chcemy zautomatyzować wykonanie również samych migracji przy starcie aplikacji. Dodajemy nasz projekt do referencji projektu Webowego, następnie musimy podmienić kilka miejsc w naszej aplikacji:
+Jeżeli dalej chcemy wykonywać aktualizację na starcie aplikacji, wystarczy użyć tego samego `DbMigrator` w Startup.cs.
+
 
 1. Startup.cs
 
