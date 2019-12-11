@@ -1,0 +1,15 @@
+﻿@{ ViewData["Title"] = "Home Page"; @using TopicalTagsWebTestDatabaseMigrations.Model }
+<div>
+    <ul>
+        @foreach (Topic topic in Model)
+        {
+            <li>
+                <a href="@topic.Url" title="@topic.Url">@topic.Title</a>
+                @foreach (Tag tag in topic.TopicTags.Select(t => t.Tag))
+                {
+                    <span class="badge badge-primary">@tag.Name</span>
+                }
+            </li>
+        }
+    </ul>
+</div>

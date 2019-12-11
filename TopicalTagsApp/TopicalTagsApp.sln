@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicalTagsWebTest", "Topic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicalTagsMigrations", "TopicalTagsMigrations\TopicalTagsMigrations.csproj", "{2EA7D21E-528B-4938-9235-D63AC37673A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TopicalTagsCodeMigrations", "TopicalTagsCodeMigrations\TopicalTagsCodeMigrations.csproj", "{7B80E05B-9D0A-4760-BA90-4C66FD341730}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicalTagsCodeMigrations", "TopicalTagsCodeMigrations\TopicalTagsCodeMigrations.csproj", "{7B80E05B-9D0A-4760-BA90-4C66FD341730}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicalTagsWebTestDatabaseMigrations", "TopicalTagsWebTestDatabaseMigrations\TopicalTagsWebTestDatabaseMigrations.csproj", "{1ECCC536-E379-4D95-B36F-B814A52CC1BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{7B80E05B-9D0A-4760-BA90-4C66FD341730}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B80E05B-9D0A-4760-BA90-4C66FD341730}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B80E05B-9D0A-4760-BA90-4C66FD341730}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1ECCC536-E379-4D95-B36F-B814A52CC1BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ECCC536-E379-4D95-B36F-B814A52CC1BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ECCC536-E379-4D95-B36F-B814A52CC1BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ECCC536-E379-4D95-B36F-B814A52CC1BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
