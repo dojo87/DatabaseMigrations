@@ -433,7 +433,7 @@ Wyświetlmy je na widoku Home/Index.cstml
 
 ### Konfiguracja z życia wzięta
 
-SqlPackage jest całkiem rozbudowanym narzędzeniem i może służyć do rozwiązania niejednego problemu. W jednym z projektów mamy środowisko Dev, QA i Prod no i swoją lokalną bazkę. Bazy siedzą na współdzielonym serwerze, gdzie nie możemy sobie pozwolić na ustawienie w profilu "Always re-create database", ponieważ nie dostaliśmy najzwyczajniej ku temu uprawnień. Naszym osobistym wymaganiem jest jednak, aby baza DEV była "czysta" przy każdym _Releasie_ i testy systemowe były wykonane na takiej właśnie wersji. QA natomiast powinien być aktualizowany bez utraty danych. Na Produkcji (na dzień w który to pisze)... nie mamy póki co zgody i uprawnień do stosowania automatycznego procesu. W tym przypadku generujemy skrypt _różnicowy_ dla bazy produkcyjnej i dostarczamy komuś z plakietką DBA (który na dodatek siedzi w biurze o parę stref czasowych do przodu IST - nice).
+SqlPackage jest całkiem rozbudowanym narzędzeniem i może służyć do rozwiązania niejednego problemu. W jednym z projektów mamy środowisko Dev, QA i Prod no i swoją lokalną bazkę. Bazy siedzą na współdzielonym serwerze, gdzie nie możemy sobie pozwolić na ustawienie w profilu "Always re-create database", ponieważ nie dostaliśmy najzwyczajniej ku temu uprawnień. Naszym osobistym wymaganiem jest jednak, aby baza DEV była "czysta" przy każdym _Releasie_ i testy systemowe były wykonane na takiej właśnie wersji. QA natomiast powinien być aktualizowany bez utraty danych. Na Produkcji (na dzień w który to pisze)... nie mamy póki co zgody i uprawnień do stosowania automatycznego procesu. W tym przypadku generujemy skrypt _różnicowy_ dla bazy produkcyjnej i dostarczamy komuś z plakietką DBA (który na dodatek siedzi w biurze o parę stref czasowych później - nice).
 
 We wszystkich przypadkach korzystamy z _Windows Authentication_ w połączeniu z bazą, ale gdyby zaszła potrzeba przekazania ukrytych haseł w automatycznym procesie, to SqlPackage również pozwala na to dla `/Action:Publish` (patrz parametr `/TargetConnectionString` lub krótko `/tcs`).
 
@@ -1065,7 +1065,6 @@ public class Program
 ```
 
 Jeżeli dalej chcemy wykonywać aktualizację na starcie aplikacji, wystarczy użyć tego samego `DbMigrator` w Startup.cs.
-
 
 1. Startup.cs
 

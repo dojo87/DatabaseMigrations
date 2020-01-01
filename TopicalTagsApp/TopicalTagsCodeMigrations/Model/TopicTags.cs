@@ -6,7 +6,6 @@ namespace TopicalTagsCodeMigrations.Model
 {
     public partial class TopicTags
     {
-        [Key]
         public int TopicId { get; set; }
         public int TagId { get; set; }
 

@@ -22,7 +22,16 @@ namespace TopicalTagsCodeMigrations.Model
         /// <param name="options"></param>
         public TopicContext(DbContextOptions<TopicContext> options) : base(options)
         {
+           
+        }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            
+            modelBuilder.Entity<TopicTags>(entity =>
+            {
+                entity.HasKey(e => new { e.TopicId, e.TagId });
+            });
         }
 
         public DbSet<Topic> Topics { get; set; }

@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace TopicalTagsCodeMigrations.Migrations
 {
@@ -12,7 +11,7 @@ namespace TopicalTagsCodeMigrations.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(maxLength: 255, nullable: true)
                 },
                 constraints: table =>
@@ -25,7 +24,7 @@ namespace TopicalTagsCodeMigrations.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(maxLength: 2000, nullable: true),
                     Url = table.Column<string>(maxLength: 2000, nullable: true)
                 },
@@ -38,14 +37,12 @@ namespace TopicalTagsCodeMigrations.Migrations
                 name: "TopicTags",
                 columns: table => new
                 {
-                    TopicId = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    TagId = table.Column<int>(nullable: false),
-                    TopicId1 = table.Column<int>(nullable: true)
+                    TopicId = table.Column<int>(nullable: false),
+                    TagId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TopicTags", x => x.TopicId);
+                    table.PrimaryKey("PK_TopicTags", x => new { x.TopicId, x.TagId });
                     table.ForeignKey(
                         name: "FK_TopicTags_Tags_TagId",
                         column: x => x.TagId,
@@ -53,22 +50,17 @@ namespace TopicalTagsCodeMigrations.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_TopicTags_Topics_TopicId1",
-                        column: x => x.TopicId1,
+                        name: "FK_TopicTags_Topics_TopicId",
+                        column: x => x.TopicId,
                         principalTable: "Topics",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_TopicTags_TagId",
                 table: "TopicTags",
                 column: "TagId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TopicTags_TopicId1",
-                table: "TopicTags",
-                column: "TopicId1");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
