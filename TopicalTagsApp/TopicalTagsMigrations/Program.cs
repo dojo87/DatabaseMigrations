@@ -14,15 +14,21 @@ namespace TopicalTagsMigrations
 
             DbMigrator migrator = new DbMigrator();
 
-            migrator.Migrate(appSettingsPath: args[0], connectionStringName:args[1], migrationsDirectory:args[2]);
+            migrator.Migrate(appSettingsPath: GetArgument(args, 0), 
+                connectionStringName: GetArgument(args, 1), 
+                migrationsDirectory: GetArgument(args, 2), 
+                configuration: GetArgument(args, 3), 
+                configurationDefault: "Default");
         }
+
+        private static string GetArgument(string[] args, int index) => args.Length > index ? args[index] : null;
 
         private static void ValidateArguments(string[] args)
         {
-            if (args.Length != 3)
+            if (args.Length < 3)
             {
                 throw new ArgumentOutOfRangeException(nameof(args),
-                    "usage: TopicalTagsMigrations.exe 'Path/To/appsettings.json' 'ConnectionStringName' 'Migration/scripts/directory'");
+                    "usage: TopicalTagsMigrations.exe 'Path/To/appsettings.json' 'ConnectionStringName' 'Migration/scripts/directory' <optional>'configuration'");
             }
             if (!File.Exists(args[0]))
             {

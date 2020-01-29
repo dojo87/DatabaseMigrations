@@ -2,7 +2,7 @@
   "profiles": {
     "TopicalTagsMigrations": {
       "commandName": "Project",
-      "commandLineArgs": "\"$(SolutionDir)\\TopicalTagsWebTest\\appsettings.json\" DefaultDatabase \"$(SolutionDir)\\TopicalTags\\Migrations\""
+      "commandLineArgs": "\"$(SolutionDir)TopicalTagsWebTestDatabaseMigrations\\appsettings.json\" DatabaseConnectionString \"$(ProjectDir)Migrations\" \"$(Configuration)\""
     }
   }
 }

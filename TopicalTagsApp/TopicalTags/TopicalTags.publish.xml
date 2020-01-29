@@ -6,8 +6,9 @@
     <DeployScriptFileName>TopicalTags.sql</DeployScriptFileName>
     <TargetConnectionString>Data Source=(localdb)\MSSQLLocalDB;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Connect Timeout=60;Encrypt=False;TrustServerCertificate=False;Authentication="Active Directory Integrated"</TargetConnectionString>
     <ProfileVersionNumber>1</ProfileVersionNumber>
-    <BlockOnPossibleDataLoss>True</BlockOnPossibleDataLoss>
+    <BlockOnPossibleDataLoss>False</BlockOnPossibleDataLoss>
     <CommentOutSetVarDeclarations>False</CommentOutSetVarDeclarations>
     <ScriptDatabaseOptions>False</ScriptDatabaseOptions>
+    <CreateNewDatabase>True</CreateNewDatabase>
   </PropertyGroup>
 </Project>

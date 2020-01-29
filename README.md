@@ -217,7 +217,7 @@ Odpalenie skryptu już bez pytania aktualizuje nam bazę. Możemy jednak na wiel
 
 ### Rozwiązywanie Konfliktów
 
-Taki zestaw skryptów bez problemu udostępniamy w naszym repozytorium kodu i rozwiązywanie konfliktów odbywa się jak w przypadku każdego innego skryptu.
+Taki zestaw skryptów bez problemu udostępniamy w naszym repozytorium kodu i rozwiązywanie konfliktów odbywa się jak w przypadku każdego innego pliku z kodem.
 
 ### Dywersyfikacja Środowiska
 
@@ -321,10 +321,10 @@ Będziemy musieli zadowolić się obiektem pośredniczącym. Zobaczymy jednak ja
 Listę linków z tagami wypiszemy w najprostrzej aplikacji ASP.NET Core (MVC). Po utworzeniu projektu zaczniemy od wygenerowania modelu naszej bazy. Jeżeli w ten sposób utworzymy nowy projekt, to Entity Framework Core wraz z kilkoma bibliotekami komplementarnymi jest już w zależnościach projektu. Niemniej, gdyby okazało się, że w twoim projekcie czegoś brakuje, upewnij się, że odpowiednie komponenty są zainstalowane:
 
 ```powershell
-dotnet add package Microsoft.EntityFrameworkCore --version 2.2.6
-dotnet add package Microsoft.EntityFrameworkCore.Design --version 2.2.6
-dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 2.2.6
-dotnet add package Microsoft.Extensions.Configuration.Json --version 2.2.0
+dotnet add package Microsoft.EntityFrameworkCore --version 3.1.0
+dotnet add package Microsoft.EntityFrameworkCore.Design --version 3.1.0
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 3.1.0
+dotnet add package Microsoft.Extensions.Configuration.Json --version 3.1.0
 ```
 
 Paczka `Design` przychodzi nam z pomocą przez dodatkowe możliwości CLI dotnet - dzięki niej będziemy w stanie wygenerować nasze klasy ORM zamiast ich pisać.
@@ -514,8 +514,8 @@ Wykorzystamy do tego celu [DbUp](https://www.nuget.org/packages/dbup-sqlserver/)
 Stwórzmy aplikację konsolową .NET Core i zainstalujmy potrzebne narzędzia:
 
 ```powershell
-dotnet add package dbup-sqlserver --version 4.2.0
-dotnet add package Newtonsoft.Json --version 12.0.2
+dotnet add package dbup-sqlserver --version 4.3.1
+dotnet add package Newtonsoft.Json --version 12.0.3
 ```
 
 DbUp pozwala konfigurować sposób migracji bazy danych na wiele sposobów przez Fluent API. Napiszmy klasę DbMigrator, aby zdefiniować nasz proces.

@@ -59,6 +59,7 @@
     <Folder Include="Properties" />
     <Folder Include="Schema" />
     <Folder Include="PostScripts" />
+    <Folder Include="PostScripts\Configuration" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Schema\Topic.sql" />
@@ -73,6 +74,9 @@
     <None Include="PostScripts\PostScript.Release.sql" />
     <None Include="SwitchToEnvironmentFile.ps1" />
     <None Include="DeployDebug.ps1" />
+    <None Include="PostScripts\Configuration\Default.sql" />
+    <None Include="PostScripts\Configuration\Debug.sql" />
+    <None Include="PostScripts\Configuration\Release.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TopicalTags.publish.xml" />

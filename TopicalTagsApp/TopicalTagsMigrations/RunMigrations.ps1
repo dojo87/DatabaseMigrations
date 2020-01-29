@@ -1,1 +1,1 @@
-﻿dotnet run "../TopicaltagsWebTest/appsettings.json" "DefaultDatabase" "./Migrations/"
+﻿dotnet run "../TopicalTagsWebTestDatabaseMigrations/appsettings.json" "DatabaseConnectionString" "./Migrations/" "Debug"

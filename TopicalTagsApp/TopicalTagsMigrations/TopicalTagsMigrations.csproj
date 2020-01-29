@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="dbup-sqlserver" Version="4.2.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="dbup-sqlserver" Version="4.3.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,6 +16,19 @@
 
   <ItemGroup>
     <None Remove="Migrations\0001-Initial.sql" />
+    <None Remove="Migrations\Always\0_Configuration.sql" />
+    <None Remove="Migrations\Always\0_TestData.sql" />
+    <None Remove="Migrations\Always\Debug\Debug.sql" />
+    <None Remove="Migrations\Always\Default\Default.sql" />
+    <None Remove="Migrations\Always\Release\Release.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Migrations\Always\Debug\Debug.sql" />
+    <Content Include="Migrations\Always\Default\Default.sql" />
+    <Content Include="Migrations\Always\0_TestData.sql" />
+    <Content Include="Migrations\Always\0_Configuration.sql" />
+    <Content Include="Migrations\Always\Release\Release.sql" />
   </ItemGroup>
 
 </Project>
