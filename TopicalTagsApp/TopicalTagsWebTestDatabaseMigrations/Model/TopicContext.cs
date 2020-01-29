@@ -23,14 +23,12 @@ namespace TopicalTagsWebTestDatabaseMigrations.Model
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("name=DefaultDatabase");
+                optionsBuilder.UseSqlServer("name=DatabaseConnectionString");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasAnnotation("ProductVersion", "2.2.4-servicing-10062");
-
             modelBuilder.Entity<Tag>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedNever();
@@ -71,6 +69,10 @@ namespace TopicalTagsWebTestDatabaseMigrations.Model
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_TopicTag_ToTopic");
             });
+
+            OnModelCreatingPartial(modelBuilder);
         }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }
