@@ -85,9 +85,9 @@
     <None Include="PostScripts\TagConfiguration.sql" />
   </ItemGroup>
   <PropertyGroup>
-    <PreBuildEvent>powershell.exe "$(ProjectDir)SwitchToEnvironmentFile.ps1" -fileName "$(ProjectDir)PostScripts\PostScript.sql" -configuration "$(ConfigurationName)"</PreBuildEvent>
+    <PreBuildEvent>powershell.exe -File "$(ProjectDir)SwitchToEnvironmentFile.ps1" -fileName "$(ProjectDir)PostScripts\PostScript.sql" -configuration "$(ConfigurationName)"</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>powershell.exe "$(ProjectDir)SwitchToEnvironmentFile.ps1" -fileName "$(ProjectDir)PostScripts\PostScript.sql" -configuration "Default"</PostBuildEvent>
+    <PostBuildEvent>powershell.exe -File "$(ProjectDir)SwitchToEnvironmentFile.ps1" -fileName "$(ProjectDir)PostScripts\PostScript.sql" -configuration "Default"</PostBuildEvent>
   </PropertyGroup>
 </Project>
