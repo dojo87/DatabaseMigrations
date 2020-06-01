@@ -5,5 +5,5 @@ You should not edit PostScript.sql as it is generated. If you want to edit defau
 */
 
 :r .\TagConfiguration.sql	
-:r .\TestData.sql
+:r .\Common.sql
 :r .\Configuration\Release.sql

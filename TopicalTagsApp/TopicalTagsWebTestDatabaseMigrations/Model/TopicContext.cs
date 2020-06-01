@@ -15,6 +15,7 @@ namespace TopicalTagsWebTestDatabaseMigrations.Model
         {
         }
 
+        public virtual DbSet<Configuration> Configuration { get; set; }
         public virtual DbSet<Tag> Tag { get; set; }
         public virtual DbSet<Topic> Topic { get; set; }
         public virtual DbSet<TopicTags> TopicTags { get; set; }
@@ -23,13 +24,22 @@ namespace TopicalTagsWebTestDatabaseMigrations.Model
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("name=DefaultDatabase");
+                optionsBuilder.UseSqlServer("name=DatabaseConnectionString");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasAnnotation("ProductVersion", "2.2.4-servicing-10062");
+            modelBuilder.Entity<Configuration>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.Property(e => e.Key)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Value).IsUnicode(false);
+            });
 
             modelBuilder.Entity<Tag>(entity =>
             {
@@ -71,6 +81,10 @@ namespace TopicalTagsWebTestDatabaseMigrations.Model
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_TopicTag_ToTopic");
             });
+
+            OnModelCreatingPartial(modelBuilder);
         }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }

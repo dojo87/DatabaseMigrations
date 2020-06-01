@@ -3,7 +3,7 @@ Post-Deployment Script
 Specific Default scripts
 */
 
-IF NOT EXISTS (SELECT TOP 1 Id FROM Topic WHERE Id = 100)
+IF NOT EXISTS (SELECT TOP 1 [Key] FROM [Configuration] WHERE [Key] = 'DEFAULT')
 BEGIN 
-	INSERT INTO Topic (Id, Title, Url) VALUES (100, 'DEFAULT','localhost');
+	INSERT INTO [Configuration] ([Key], [Value]) VALUES ('Config','DEFAULT');
 END;

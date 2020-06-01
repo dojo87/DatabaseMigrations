@@ -66,23 +66,34 @@
     <Build Include="Schema\Tag.sql" />
     <Build Include="Schema\TopicTags.sql" />
     <PostDeploy Include="PostScripts\PostScript.sql" />
+    <Build Include="Schema\Configuration.sql" />
+    <None Include="PostScripts\PostScript.Debug.sql" />
+    <None Include="PostScripts\PostScript.Default.sql" />
+    <None Include="PostScripts\PostScript.Release.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PostScripts\TestData.sql" />
-    <None Include="PostScripts\PostScript.Default.sql" />
-    <None Include="PostScripts\PostScript.Debug.sql" />
-    <None Include="PostScripts\PostScript.Release.sql" />
-    <None Include="SwitchToEnvironmentFile.ps1" />
     <None Include="DeployDebug.ps1" />
     <None Include="PostScripts\Configuration\Default.sql" />
-    <None Include="PostScripts\Configuration\Debug.sql" />
+    <None Include="PostScripts\Configuration\Debug.sql">
+      <CopyToOutputDirectory>DoNotCopy</CopyToOutputDirectory>
+    </None>
     <None Include="PostScripts\Configuration\Release.sql" />
+    <None Include="PostScripts\Common.sql" />
+    <None Include="SwitchToEnvironmentFile.ps1" />
+    <None Include="GenerateDiffScript.ps1" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TopicalTags.publish.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PostScripts\TagConfiguration.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="configuration">
+      <DefaultValue>Debug</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent>powershell.exe -File "$(ProjectDir)SwitchToEnvironmentFile.ps1" -fileName "$(ProjectDir)PostScripts\PostScript.sql" -configuration "$(ConfigurationName)"</PreBuildEvent>

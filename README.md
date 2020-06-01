@@ -321,6 +321,8 @@ Będziemy musieli zadowolić się obiektem pośredniczącym. Zobaczymy jednak ja
 Listę linków z tagami wypiszemy w najprostrzej aplikacji ASP.NET Core (MVC). Po utworzeniu projektu zaczniemy od wygenerowania modelu naszej bazy. Jeżeli w ten sposób utworzymy nowy projekt, to Entity Framework Core wraz z kilkoma bibliotekami komplementarnymi jest już w zależnościach projektu. Niemniej, gdyby okazało się, że w twoim projekcie czegoś brakuje, upewnij się, że odpowiednie komponenty są zainstalowane:
 
 ```powershell
+dotnet tool install --global dotnet-ef
+
 dotnet add package Microsoft.EntityFrameworkCore --version 3.1.0
 dotnet add package Microsoft.EntityFrameworkCore.Design --version 3.1.0
 dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 3.1.0

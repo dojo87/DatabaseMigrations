@@ -1,5 +1,5 @@
 ﻿dotnet ef dbcontext scaffold `
-   name=DefaultDatabase `
+   name=DatabaseConnectionString `
    Microsoft.EntityFrameworkCore.SqlServer `
    --output-dir Model `
    --context TopicContext `
