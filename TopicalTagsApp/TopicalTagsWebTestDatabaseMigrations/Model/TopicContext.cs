@@ -15,6 +15,7 @@ namespace TopicalTagsWebTestDatabaseMigrations.Model
         {
         }
 
+        public virtual DbSet<Configuration> Configuration { get; set; }
         public virtual DbSet<Tag> Tag { get; set; }
         public virtual DbSet<Topic> Topic { get; set; }
         public virtual DbSet<TopicTags> TopicTags { get; set; }
@@ -29,6 +30,17 @@ namespace TopicalTagsWebTestDatabaseMigrations.Model
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Configuration>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.Property(e => e.Key)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Value).IsUnicode(false);
+            });
+
             modelBuilder.Entity<Tag>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedNever();

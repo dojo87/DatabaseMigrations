@@ -3,7 +3,7 @@ Post-Deployment Script
 Specific Release scripts
 */
 
-IF NOT EXISTS (SELECT TOP 1 Id FROM Topic WHERE Id = 100)
+IF NOT EXISTS (SELECT TOP 1 [Key] FROM [Configuration] WHERE [Key] = 'RELEASE')
 BEGIN 
-	INSERT INTO Topic (Id, Title, Url) VALUES (100, 'RELEASE','localhost');
+	INSERT INTO [Configuration] ([Key], [Value]) VALUES ('Config','RELEASE');
 END;

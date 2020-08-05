@@ -22,7 +22,7 @@ BEGIN
 	INSERT INTO Topic (Id, Title, Url) VALUES (3, 'Evidence for a Young World','https://answersingenesis.org/astronomy/age-of-the-universe/evidence-for-a-young-world/');
 	INSERT INTO TopicTags (TopicId, TagId) VALUES (3,1), (3,4), (3,7), (3,8);
 
-	INSERT INTO Topic (Id, Title, Url) VALUES (4, 'Are Atheists Right? Is Faith the Absence of Reason/Evidence?','https://answersingenesis.org/christianity/are-atheists-right/');
-	INSERT INTO TopicTags (TopicId, TagId) VALUES (4,1), (4,2), (4,3);	
+	INSERT INTO Topic (Id, Title, Url) VALUES (4, 'Why did dinosaurs disapear?','https://www.youtube.com/watch?v=YEN8Jzsi2NI');
+	INSERT INTO TopicTags (TopicId, TagId) VALUES (4,1), (4,9);	
 	
 END;

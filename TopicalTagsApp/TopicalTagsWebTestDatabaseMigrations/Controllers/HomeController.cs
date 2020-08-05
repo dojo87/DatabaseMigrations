@@ -20,6 +20,9 @@ namespace TopicalTagsWebTestDatabaseMigrations.Controllers
                 .Include(t => t.TopicTags)
                 .ThenInclude(t => t.Tag)
                 .ToList();
+
+            ViewData["Configuration"] = string.Join(" | ", Repo.Configuration.Select(c => $"{c.Key}={c.Value}"));
+
             return View(allTopics);
         }
     }

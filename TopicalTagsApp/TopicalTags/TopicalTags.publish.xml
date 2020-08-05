@@ -11,4 +11,9 @@
     <ScriptDatabaseOptions>False</ScriptDatabaseOptions>
     <CreateNewDatabase>True</CreateNewDatabase>
   </PropertyGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="configuration">
+      <Value>Debug</Value>
+    </SqlCmdVariable>
+  </ItemGroup>
 </Project>
