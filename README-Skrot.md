@@ -5,3 +5,6 @@
 5. Aktualizacja i automatyzacja - projekt SQL z definicjami tabel
 6. PostDeployment Script z danymi testowymi i wymagalnymi
 7.
+
+Dlaczego nie mogę odpalić tego query... w Oracle'u
+No właśnie druga część pytania odpowiada na nie
