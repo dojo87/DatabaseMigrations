@@ -1,2 +1,2 @@
 $sqlPackageExe = "C:\Program Files\Microsoft SQL Server\150\DAC\bin\SqlPackage.exe"
-&$sqlPackageExe /Action:Publish  /SourceFile:"./bin/Debug/TopicalTags.dacpac" /Profile:TopicalTags.publish.xml /Variables:configuration=Default
+&$sqlPackageExe /Action:Publish  /SourceFile:"./bin/Debug/TopicalTags.DatabaseFirst.State.dacpac" /Profile:TopicalTags.publish.xml /Variables:configuration=Default

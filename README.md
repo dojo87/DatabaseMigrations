@@ -26,7 +26,7 @@ Co robisz jak trafiasz do takiego projektu? Nie, nie uciekasz. Mierzysz się z G
 
 ## 6 wyzwań migracji
 
-Najprostrzy scenariusz zakłada, że dane w trakcie działania aplikacji się nie zmieniają i są zawsze dostarczane z nową wersją jako statyczny zasób. A no i trzeba jeszcze założyć, że zespół składa się z jednego programisty. W przeciwnym wypadku i tak trzeba znaleźć sposób na dzielenie się tą samą bazą bez zaburzenia pracy innych. W takim scenariuszu jednak i tak wybrany sposób aktualizacji takiej bazy może być znacząco prostrzy od baz "żyjących swoim życiem".
+Najprostszy scenariusz zakłada, że dane w trakcie działania aplikacji się nie zmieniają i są zawsze dostarczane z nową wersją jako statyczny zasób. A no i trzeba jeszcze założyć, że zespół składa się z jednego programisty. W przeciwnym wypadku i tak trzeba znaleźć sposób na dzielenie się tą samą bazą bez zaburzenia pracy innych. W takim scenariuszu jednak i tak wybrany sposób aktualizacji takiej bazy może być znacząco prostrzy od baz "żyjących swoim życiem".
 To jest znacząca różnica między kodem programu, który zwykle dostarczymy kopiując kilka plików, a danymi, które mogą się zmieniać i mają swoją autonomię. Dodając do tego przykład ze wstępu, widzimy jakie wyzwania nas czekają:
 
 1. **Źródło Prawdy** Musisz wybrać źródło prawdy (jak i w życiu) co do modelu bazy; gdzie będziesz ją (prawdę) trzymać? Czy baza danych czy kod programu definiują jej strukturę? _Database First_ czy _Code First_? A może _Model First_? Nową wersję przechowujemy jako stan bazy czy listę zmian?

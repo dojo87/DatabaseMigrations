@@ -68,19 +68,10 @@
     <Build Include="Schema\TopicTags.sql" />
     <PostDeploy Include="PostScripts\PostScript.sql" />
     <Build Include="Schema\Configuration.sql" />
-    <None Include="PostScripts\PostScript.Debug.sql" />
-    <None Include="PostScripts\PostScript.Default.sql" />
-    <None Include="PostScripts\PostScript.Release.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PostScripts\TestData.sql" />
     <None Include="DeployDebug.ps1" />
-    <None Include="PostScripts\Configuration\Default.sql" />
-    <None Include="PostScripts\Configuration\Debug.sql">
-      <CopyToOutputDirectory>DoNotCopy</CopyToOutputDirectory>
-    </None>
-    <None Include="PostScripts\Configuration\Release.sql" />
-    <None Include="PostScripts\Common.sql" />
     <None Include="SwitchToEnvironmentFile.ps1" />
     <None Include="GenerateDiffScript.ps1" />
   </ItemGroup>
