@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TopicalTagsWebTestDatabaseMigrations.Model;
+using TopicalTags.WebTest.DatabaseFirstTransitions.Model;
 
 namespace TopicalTags.WebTest.DatabaseFirstTransitions
 {
