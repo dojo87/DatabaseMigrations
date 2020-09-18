@@ -17,7 +17,8 @@ namespace TopicalTags.DatabaseFirst.Migrations
             migrator.Migrate(appSettingsPath: GetArgument(args, 0), 
                 connectionStringName: GetArgument(args, 1), 
                 migrationsDirectory: GetArgument(args, 2), 
-                configuration: GetArgument(args, 3), 
+                configuration: GetArgument(args, 3),
+                variables: GetArgument(args, 4),
                 configurationDefault: "Default");
         }
 
@@ -28,7 +29,7 @@ namespace TopicalTags.DatabaseFirst.Migrations
             if (args.Length < 3)
             {
                 throw new ArgumentOutOfRangeException(nameof(args),
-                    "usage: TopicalTagsMigrations.exe 'Path/To/appsettings.json' 'ConnectionStringName' 'Migration/scripts/directory' <optional>'configuration'");
+                    "usage: TopicalTagsMigrations.exe 'Path/To/appsettings.json' 'ConnectionStringName' 'Migration/scripts/directory' <optional>'configuration' <optional>'variable1=value&variable2=value'");
             }
             if (!File.Exists(args[0]))
             {

@@ -35,12 +35,16 @@ function Get-MigrationFilePath()
 
 	return $migrationFile
 }
-
+Write-Output "Determinig migration number"
 $outputPath = Get-MigrationFilePath -migrationName $migration -migrationsLocation $migrationsFolder
+
+Write-Output "Migration Path: $outputPath"
+Write-Output "Generating migration"
 
 # Run migration generation
 $sqlPackageExe = "C:\Program Files (x86)\Microsoft SQL Server\140\DAC\bin\SqlPackage.exe"
 &$sqlPackageExe /Action:Script `
-	/SourceFile:"../TopicalTags/bin/Debug/TopicalTags.dacpac" `
-	/Profile:../TopicalTags/TopicalTags.publish.xml `
+	/SourceFile:"../TopicalTags.DatabaseFirst.MigrationsModel/bin/Debug/TopicalTags.DatabaseFirst.MigrationsModel.dacpac" `
+	/Profile:../TopicalTags.DatabaseFirst.MigrationsModel/TopicalTags.publish.xml `
+	/TargetDatabaseName:"TopicalTags.DatabaseFirstTransitions" `
 	/OutputPath:$outputPath

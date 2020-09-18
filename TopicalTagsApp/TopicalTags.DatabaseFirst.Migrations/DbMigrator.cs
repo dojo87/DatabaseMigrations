@@ -4,22 +4,61 @@ using DbUp.Engine;
 using DbUp.Helpers;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace TopicalTags.DatabaseFirst.Migrations
 {
     public class DbMigrator
     {
-        private const string ConventionPathForScriptsRunAlways = "Always";
-
-        public void Migrate(string appSettingsPath, string connectionStringName, string migrationsDirectory, string configuration = "Debug", string configurationDefault = "Default")
+        public enum AlwaysScriptType
         {
+            AlwaysBefore,
+            AlwaysAfter
+        }
+
+        public void Migrate(string appSettingsPath, 
+            string connectionStringName, 
+            string migrationsDirectory, 
+            string configuration = "Debug", 
+            string configurationDefault = "Default",
+            string variables=null)
+        {
+            var variableDictionary = ParseVariables(variables);
             string connectionString = GetConnectionString(appSettingsPath, connectionStringName);
-            DatabaseUpgradeResult executionResult = MigrateWithEngine(migrationsDirectory, connectionString);
+
+            RecreateIfRequired(variableDictionary, connectionString);
+
+            DatabaseUpgradeResult executionResult = ExecuteAlways(AlwaysScriptType.AlwaysBefore, migrationsDirectory, connectionString, configuration, configurationDefault, variableDictionary);
+            PrintResult("Pre Deployment Scripts", executionResult);
+
+            executionResult = MigrateWithEngine(migrationsDirectory, connectionString, variableDictionary);
             PrintResult("Migration", executionResult);
 
-            executionResult = ExecuteAlways(migrationsDirectory, connectionString, configuration, configurationDefault);
+            executionResult = ExecuteAlways(AlwaysScriptType.AlwaysAfter, migrationsDirectory, connectionString, configuration, configurationDefault, variableDictionary);
             PrintResult("Data and Configuration Sync", executionResult);
+        }
+
+        private void RecreateIfRequired(Dictionary<string, string> variableDictionary, string connectionString)
+        {
+            string recreateBool = "false";
+            if (variableDictionary.TryGetValue("RecreateDatabase", out recreateBool) && recreateBool.ToLowerInvariant().Equals("true"))
+            {
+                Console.WriteLine("Dropping database");
+                DropDatabase.For.SqlDatabase(connectionString);
+            }
+        }
+
+        private Dictionary<string, string> ParseVariables(string variablesString)
+        {
+            Dictionary<string, string> result = new Dictionary<string, string>();
+            if (variablesString != null)
+            {
+                result = variablesString.Split("&", StringSplitOptions.RemoveEmptyEntries)
+                    .ToDictionary(k => k.Split('=')[0], v => v.Split('=')[1]);
+            }
+            return result;
         }
 
         private void PrintResult(string resultType, DatabaseUpgradeResult executionResult)
@@ -31,27 +70,30 @@ namespace TopicalTags.DatabaseFirst.Migrations
             }
         }
 
-        protected virtual DatabaseUpgradeResult MigrateWithEngine(string migrationsDirectory, string connectionString)
+        protected virtual DatabaseUpgradeResult MigrateWithEngine(string migrationsDirectory, string connectionString, IDictionary<string,string> variables)
         {
             var engine = DeployChanges.To
                             .SqlDatabase(connectionString)
                             .WithScriptsFromFileSystem(migrationsDirectory)
                             .LogToConsole()
+                            .WithVariables(variables)
                             .Build();
 
             var migration = engine.PerformUpgrade();
             return migration;
         }
 
-        protected virtual DatabaseUpgradeResult ExecuteAlways(string migrationsDirectory, string connectionString, string configuration, string configurationDefault)
+        protected virtual DatabaseUpgradeResult ExecuteAlways(AlwaysScriptType alwaysScriptType, string migrationsDirectory, string connectionString, string configuration, string configurationDefault, IDictionary<string,string> variables)
         {
-            string scriptsPath = Path.Combine(migrationsDirectory, ConventionPathForScriptsRunAlways);
-            string configurationSpecificScriptsPath = GetConfigurationSpecificScriptsPath(migrationsDirectory, configuration, configurationDefault);
-            DatabaseUpgradeResult result = ExecuteAlways(connectionString, scriptsPath, configurationSpecificScriptsPath);
+            EnsureDatabase.For.SqlDatabase(connectionString);
+            
+            string scriptsPath = Path.Combine(migrationsDirectory, alwaysScriptType.ToString());
+            string configurationSpecificScriptsPath = GetConfigurationSpecificScriptsPath(scriptsPath, configuration, configurationDefault);
+            DatabaseUpgradeResult result = ExecuteAlways(connectionString, scriptsPath, configurationSpecificScriptsPath, variables);
             return result;
         }
 
-        protected virtual DatabaseUpgradeResult ExecuteAlways(string connectionString, string scriptsPath, string configurationSpecificScriptsPath)
+        protected virtual DatabaseUpgradeResult ExecuteAlways(string connectionString, string scriptsPath, string configurationSpecificScriptsPath, IDictionary<string, string> variables)
         {
             DatabaseUpgradeResult result = new DatabaseUpgradeResult(new SqlScript[0], true, null);
             if (Directory.Exists(scriptsPath))
@@ -66,6 +108,7 @@ namespace TopicalTags.DatabaseFirst.Migrations
                 }
 
                 var engine = engineBuilder.JournalTo(new NullJournal())
+                                .WithVariables(variables)
                                 .LogToConsole()
                                 .Build();
 
@@ -85,7 +128,7 @@ namespace TopicalTags.DatabaseFirst.Migrations
             {
                 if (possibleConfiguration != null)
                 {
-                    configurationSpecificScriptsPath = Path.Combine(migrationsDirectory, ConventionPathForScriptsRunAlways, possibleConfiguration);
+                    configurationSpecificScriptsPath = Path.Combine(migrationsDirectory, possibleConfiguration);
                     if (!Directory.Exists(configurationSpecificScriptsPath))
                     {
                         configurationSpecificScriptsPath = null;

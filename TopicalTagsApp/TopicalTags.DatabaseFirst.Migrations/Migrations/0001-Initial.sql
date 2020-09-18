@@ -1,4 +1,15 @@
-﻿PRINT N'Creating [dbo].[Tag]...';
+﻿PRINT N'Creating [dbo].[Configuration]...';
+
+
+GO
+CREATE TABLE [dbo].[Configuration] (
+    [Key]         VARCHAR (100) NULL,
+    [Value]       VARCHAR (MAX) NULL
+);
+
+
+GO
+PRINT N'Creating [dbo].[Tag]...';
 
 
 GO
@@ -39,7 +50,7 @@ PRINT N'Creating [dbo].[FK_TopicTag_ToTopic]...';
 
 
 GO
-ALTER TABLE [dbo].[TopicTags] WITH NOCHECK
+ALTER TABLE [dbo].[TopicTags]
     ADD CONSTRAINT [FK_TopicTag_ToTopic] FOREIGN KEY ([TopicId]) REFERENCES [dbo].[Topic] ([Id]);
 
 
@@ -48,12 +59,12 @@ PRINT N'Creating [dbo].[FK_TopicTag_ToTag]...';
 
 
 GO
-ALTER TABLE [dbo].[TopicTags] WITH NOCHECK
+ALTER TABLE [dbo].[TopicTags]
     ADD CONSTRAINT [FK_TopicTag_ToTag] FOREIGN KEY ([TagId]) REFERENCES [dbo].[Tag] ([Id]);
 
 
 GO
-ALTER TABLE [dbo].[TopicTags] WITH CHECK CHECK CONSTRAINT [FK_TopicTag_ToTopic];
+PRINT N'Update complete.';
 
-ALTER TABLE [dbo].[TopicTags] WITH CHECK CHECK CONSTRAINT [FK_TopicTag_ToTag];
 
+GO

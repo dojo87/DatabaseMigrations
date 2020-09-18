@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,20 +15,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Migrations\0001-Initial.sql" />
-    <None Remove="Migrations\Always\0_Configuration.sql" />
-    <None Remove="Migrations\Always\0_TestData.sql" />
-    <None Remove="Migrations\Always\Debug\Debug.sql" />
-    <None Remove="Migrations\Always\Default\Default.sql" />
-    <None Remove="Migrations\Always\Release\Release.sql" />
+    <None Remove="Migrations\AlwaysAfter\0_Configuration.sql" />
+    <None Remove="Migrations\AlwaysAfter\0_TestData.sql" />
+    <None Remove="Migrations\AlwaysAfter\Debug\Debug.sql" />
+    <None Remove="Migrations\AlwaysAfter\Default\Default.sql" />
+    <None Remove="Migrations\AlwaysAfter\Release\Release.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Migrations\Always\Debug\Debug.sql" />
-    <Content Include="Migrations\Always\Default\Default.sql" />
-    <Content Include="Migrations\Always\0_TestData.sql" />
-    <Content Include="Migrations\Always\0_Configuration.sql" />
-    <Content Include="Migrations\Always\Release\Release.sql" />
+    <Content Include="Migrations\AlwaysAfter\Debug\Debug.sql" />
+    <Content Include="Migrations\AlwaysAfter\Default\Default.sql" />
+    <Content Include="Migrations\AlwaysAfter\0_TestData.sql" />
+    <Content Include="Migrations\AlwaysAfter\0_Configuration.sql" />
+    <Content Include="Migrations\AlwaysAfter\Release\Release.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\AlwaysBefore\Debug\" />
+    <Folder Include="Migrations\AlwaysBefore\Default\" />
+    <Folder Include="Migrations\AlwaysBefore\Release\" />
   </ItemGroup>
 
 </Project>

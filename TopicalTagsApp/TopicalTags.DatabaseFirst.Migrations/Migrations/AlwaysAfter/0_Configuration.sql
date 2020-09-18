@@ -1,7 +1,7 @@
 ﻿PRINT N'Configuration of tags';
 
--- W przypadku Tagów zastosujemy podejście UPSERT. 
--- Chcemy zawsze zadbać o to, że w bazie będzie te 10 tagów jednocześnie pozwalając, że w aplikacji może zachodzić jakaś administracja i dodawanie nowych tagów.
+-- Using UPSERT here. 
+-- We assume there are 10 tags that should be in the db as a basis - always.
 
 -- Cloning Tags into temp table
 SELECT TOP 0 * INTO #TempTags FROM dbo.[Tag]

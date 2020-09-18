@@ -2,7 +2,7 @@
   "profiles": {
     "TopicalTagsMigrations": {
       "commandName": "Project",
-      "commandLineArgs": "\"$(SolutionDir)TopicalTagsWebTestDatabaseMigrations\\appsettings.json\" DatabaseConnectionString \"$(ProjectDir)Migrations\" \"$(Configuration)\""
+      "commandLineArgs": "\"$(SolutionDir)TopicalTags.WebTest.DatabaseFirstTransitions\\appsettings.json\" DatabaseConnectionString \"$(ProjectDir)Migrations\" \"$(Configuration)\" \"RecreateDatabase=true\""
     }
   }
 }
