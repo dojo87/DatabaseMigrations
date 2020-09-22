@@ -33,7 +33,7 @@ namespace TopicalTags.WebTest.CodeFirst
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddDbContext<TopicalTagsCodeMigrations.Model.TopicContext>(options => options
+            services.AddDbContext<TopicalTags.CodeFirst.Model.TopicContext>(options => options
                 .UseSqlServer(this.Configuration.GetConnectionString("DefaultDatabase")));
 
             

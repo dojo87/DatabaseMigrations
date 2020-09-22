@@ -5,12 +5,6 @@
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
   </PropertyGroup>
 
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-
-
   <ItemGroup>
     <ProjectReference Include="..\TopicalTags.CodeFirst\TopicalTags.CodeFirst.csproj" />
   </ItemGroup>
