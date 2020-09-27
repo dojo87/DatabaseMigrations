@@ -42,7 +42,8 @@ Write-Output "Migration Path: $outputPath"
 Write-Output "Generating migration"
 
 # Run migration generation
-$sqlPackageExe = "C:\Program Files (x86)\Microsoft SQL Server\140\DAC\bin\SqlPackage.exe"
+$sqlPackageExe = $Env:SqlPackage
+Write-Output $sqlPackageExe
 &$sqlPackageExe /Action:Script `
 	/SourceFile:"../TopicalTags.DatabaseFirst.MigrationsModel/bin/Debug/TopicalTags.DatabaseFirst.MigrationsModel.dacpac" `
 	/Profile:../TopicalTags.DatabaseFirst.MigrationsModel/TopicalTags.publish.xml `
